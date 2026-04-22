@@ -1,0 +1,29 @@
+# Python environment and cache
+venv/
+__pycache__/
+*.py[cod]
+
+# Local environment files
+.env
+.env.*
+backend/.env
+frontend/.env
+frontend/.env.*
+
+# Build and dependency artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/*.tsbuildinfo
+
+# Local generated assets and caches
+.androidjs/
+backend/media/
+
+# Archive files
+*.zip
+
+# OS/editor files
+.DS_Store
+Thumbs.db

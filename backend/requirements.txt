@@ -1,0 +1,38 @@
+# Core
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.2
+
+# Database
+psycopg2-binary==2.9.9
+
+# Cache / Queue
+celery==5.4.0
+redis==5.0.7
+django-celery-results==2.5.1
+django-celery-beat==2.6.0
+
+# PDF Parsing
+# (Replaced by PyMuPDF in ML engine)
+
+# AI Providers
+groq==0.9.0
+httpx==0.27.2
+
+# Server
+gunicorn==22.0.0
+
+# Utils
+Pillow==10.4.0
+python-decouple==3.8
+
+# ML & NLP Engine
+sentence-transformers==3.0.1
+faiss-cpu==1.8.0
+rank-bm25==0.2.2
+scikit-learn==1.5.1
+numpy==1.26.4
+PyMuPDF==1.24.9
+pgvector==0.3.2
