@@ -37,11 +37,11 @@ class ShortlistTestDataMixin:
 
     def create_user(self, *, role: str, prefix: str) -> User:
         index = next(self._sequence)
-        password = f"test-{get_random_string(16)}"
+        generated_secret = f"test-{get_random_string(16)}"
         return User.objects.create_user(
             username=f"{prefix}-{index}",
             email=f"{prefix}-{index}@example.com",
-            password=password,
+            password=generated_secret,
             first_name=prefix.title(),
             last_name="User",
             role=role,
