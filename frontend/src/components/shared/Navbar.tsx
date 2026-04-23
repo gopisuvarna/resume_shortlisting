@@ -9,7 +9,9 @@ interface NavbarProps {
   variant?: "applicant" | "hr";
 }
 
-export default function Navbar({ variant = "applicant" }: NavbarProps) {
+export default function Navbar({
+  variant = "applicant",
+}: Readonly<NavbarProps>) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isHR = variant === "hr";

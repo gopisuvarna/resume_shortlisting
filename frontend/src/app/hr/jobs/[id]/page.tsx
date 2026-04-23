@@ -111,6 +111,53 @@ function InlineNotification({
   onClose: () => void;
 }>) {
   const styles = noticeStyles[notice.tone];
+  let icon: React.ReactNode;
+
+  if (notice.tone === "success") {
+    icon = (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    );
+  } else if (notice.tone === "error") {
+    icon = (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 9v4m0 4h.01M5.07 19h13.86A2 2 0 0020.66 16L13.73 4a2 2 0 00-3.46 0L3.34 16A2 2 0 005.07 19z"
+        />
+      </svg>
+    );
+  } else {
+    icon = (
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    );
+  }
 
   return (
     <div className="fixed right-4 top-4 z-[60] w-[min(92vw,420px)] animate-[fadeIn_.2s_ease-out]">
@@ -123,49 +170,7 @@ function InlineNotification({
           <div
             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${styles.icon}`}
           >
-            {notice.tone === "success" ? (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            ) : notice.tone === "error" ? (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v4m0 4h.01M5.07 19h13.86A2 2 0 0020.66 16L13.73 4a2 2 0 00-3.46 0L3.34 16A2 2 0 005.07 19z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
+            {icon}
           </div>
           <div className="min-w-0 flex-1">
             <p className={`text-sm font-bold ${styles.title}`}>
@@ -213,7 +218,7 @@ function MobileDrawer({
 
   const close = useCallback(() => {
     setClosing(true);
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       setClosing(false);
       onClose();
     }, 240);
@@ -602,8 +607,8 @@ export default function HRJobApplicationsPage() {
 
   useEffect(() => {
     if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 4200);
-    return () => window.clearTimeout(timer);
+    const timer = globalThis.setTimeout(() => setNotice(null), 4200);
+    return () => globalThis.clearTimeout(timer);
   }, [notice]);
 
   const loadApps = useCallback(
@@ -756,9 +761,12 @@ export default function HRJobApplicationsPage() {
           );
         }
       } else {
+        const revertedMessage = data?.reverted
+          ? ` ${data.reverted} candidate(s) moved back to Reviewing.`
+          : "";
         showNotice(
           "Bulk shortlist updated",
-          `${data?.shortlisted ?? 0} new candidate(s) were shortlisted at cutoff ${safeThreshold}.${data?.reverted ? ` ${data.reverted} candidate(s) moved back to Reviewing.` : ""}`,
+          `${data?.shortlisted ?? 0} new candidate(s) were shortlisted at cutoff ${safeThreshold}.${revertedMessage}`,
           "success",
         );
       }
@@ -935,7 +943,9 @@ export default function HRJobApplicationsPage() {
                 value={threshold}
                 onChange={(e) => {
                   const nextValue = e.target.value;
-                  setThreshold(nextValue === "" ? NaN : Number(nextValue));
+                  setThreshold(
+                    nextValue === "" ? Number.NaN : Number(nextValue),
+                  );
                 }}
                 className="w-12 px-2 py-1 border border-[var(--border)] rounded-lg text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
               />

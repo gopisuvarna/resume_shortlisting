@@ -22,6 +22,58 @@ export default function JobsPage() {
     setJobType,
     setExpLevel,
   } = useJobsList();
+  const positionSuffix = jobs.length === 1 ? "" : "s";
+  const resultSuffix = jobs.length === 1 ? "" : "s";
+  const headerLabel = loading
+    ? "Loading…"
+    : `${jobs.length} position${positionSuffix} available`;
+  const resultLabel =
+    search || jobType || expLevel
+      ? `${jobs.length} result${resultSuffix} found`
+      : "All open positions";
+
+  let jobListContent: React.ReactNode;
+  if (loading) {
+    jobListContent = (
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-32 skeleton" />
+        ))}
+      </div>
+    );
+  } else if (jobs.length === 0) {
+    jobListContent = (
+      <div className="card p-16 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
+          <svg
+            className="w-8 h-8 text-slate-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <p className="font-display font-bold text-slate-700 mb-1">
+          No positions found
+        </p>
+        <p className="text-sm text-slate-400">Try adjusting your filters</p>
+      </div>
+    );
+  } else {
+    jobListContent = (
+      <div className="space-y-3">
+        {jobs.map((job) => (
+          <JobCard key={job.id} job={job} />
+        ))}
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!authLoading && isHR) router.replace("/hr/dashboard");
@@ -62,9 +114,7 @@ export default function JobsPage() {
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-5">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-white/90 text-xs font-semibold">
-              {loading
-                ? "Loading…"
-                : `${jobs.length} position${jobs.length !== 1 ? "s" : ""} available`}
+              {headerLabel}
             </span>
           </div>
           <h1 className="font-display text-3xl sm:text-5xl font-bold text-white mb-4 text-balance">
@@ -97,47 +147,11 @@ export default function JobsPage() {
         {/* Results label */}
         {!loading && (
           <p className="text-sm font-semibold text-slate-500 mb-4">
-            {search || jobType || expLevel
-              ? `${jobs.length} result${jobs.length !== 1 ? "s" : ""} found`
-              : `All open positions`}
+            {resultLabel}
           </p>
         )}
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-32 skeleton" />
-            ))}
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="card p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-slate-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <p className="font-display font-bold text-slate-700 mb-1">
-              No positions found
-            </p>
-            <p className="text-sm text-slate-400">Try adjusting your filters</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-        )}
+        {jobListContent}
       </div>
     </div>
   );

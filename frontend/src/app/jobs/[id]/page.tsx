@@ -7,10 +7,9 @@ import { applicationsAPI, extractApiErrorMessage } from "@/lib/api";
 import Link from "next/link";
 import Navbar from "@/components/shared/Navbar";
 import ErrorAlert from "@/components/shared/ErrorAlert";
-import { PageLoader } from "@/components/shared/LoadingSpinner";
 import SkillInput from "@/components/ui/SkillInput";
 import FormField from "@/components/ui/FormField";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import LoadingSpinner, { PageLoader } from "@/components/shared/LoadingSpinner";
 
 type Step = "details" | "form" | "done";
 
@@ -172,7 +171,7 @@ export default function JobDetailPage() {
                 </div>
                 <div className="sm:text-right text-sm text-slate-400 shrink-0">
                   <p className="font-semibold text-slate-600">
-                    {job.openings} opening{job.openings !== 1 ? "s" : ""}
+                    {job.openings} opening{job.openings === 1 ? "" : "s"}
                   </p>
                   <p>{job.total_applicants} applied</p>
                   {job.deadline && (
@@ -378,9 +377,10 @@ export default function JobDetailPage() {
               </FormField>
 
               <FormField label="Resume (PDF only)" required>
-                <div
+                <button
+                  type="button"
                   onClick={() => fileRef.current?.click()}
-                  className={`border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors text-center ${
+                  className={`w-full border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors text-center ${
                     file
                       ? "border-indigo-400 bg-indigo-50"
                       : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50"
@@ -436,7 +436,7 @@ export default function JobDetailPage() {
                       <p className="text-slate-400 text-xs mt-1">Max 5MB</p>
                     </>
                   )}
-                </div>
+                </button>
               </FormField>
 
               <button
