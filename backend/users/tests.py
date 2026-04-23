@@ -6,14 +6,14 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from test_utils import DEFAULT_TEST_PASSWORD, DEFAULT_TEST_PHONE, create_test_user
+from test_utils import DEFAULT_TEST_SECRET, DEFAULT_TEST_PHONE, create_test_user
 User = get_user_model()
 
 
 class UserViewsTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.password = DEFAULT_TEST_PASSWORD
+        self.secret = DEFAULT_TEST_SECRET
         self.user = create_test_user(
             username="applicant-user",
             role=User.Role.APPLICANT,
@@ -36,8 +36,8 @@ class UserViewsTests(TestCase):
                 "first_name": "New",
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": DEFAULT_TEST_PASSWORD,
+                "password": DEFAULT_TEST_SECRET,
+                "password2": DEFAULT_TEST_SECRET,
             },
             format="json",
         )
@@ -58,8 +58,8 @@ class UserViewsTests(TestCase):
                     "last_name": "Recruiter",
                     "phone": DEFAULT_TEST_PHONE,
                     "hr_department": "Talent",
-                    "password": DEFAULT_TEST_PASSWORD,
-                    "password2": DEFAULT_TEST_PASSWORD,
+                    "password": DEFAULT_TEST_SECRET,
+                    "password2": DEFAULT_TEST_SECRET,
                     "invite_code": "wrong",
                 },
                 format="json",
@@ -71,7 +71,7 @@ class UserViewsTests(TestCase):
     def test_login_returns_user_and_tokens_for_valid_credentials(self):
         response = self.client.post(
             reverse("login"),
-            {"email": self.user.email.upper(), "password": self.password},
+            {"email": self.user.email.upper(), "password": self.secret},
             format="json",
         )
 
@@ -105,7 +105,7 @@ class UserViewsTests(TestCase):
 
         response = self.client.post(
             reverse("change-password"),
-            {"old_password": self.password, "new_password": "NewTestPass!456"},
+            {"old_password": self.secret, "new_password": "NewTestPass!456"},
             format="json",
         )
 

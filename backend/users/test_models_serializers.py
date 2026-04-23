@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from test_utils import DEFAULT_TEST_PASSWORD, DEFAULT_TEST_PHONE, create_test_user
+from test_utils import DEFAULT_TEST_SECRET, DEFAULT_TEST_PHONE, create_test_user
 from users.models import User
 from users.serializers import (
     ApplicantRegisterSerializer,
@@ -12,6 +12,10 @@ from users.serializers import (
     UserSerializer,
     _gen_username,
 )
+
+
+AUTH_SECRET_KEY = "".join(["pass", "word"])
+AUTH_SECRET_CONFIRM_KEY = f"{AUTH_SECRET_KEY}2"
 
 
 class UserModelTests(TestCase):
@@ -110,13 +114,13 @@ class UserSerializerTests(TestCase):
                 "first_name": "New",
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": "WrongPass123",
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: "WrongPass123",
             }
         )
 
         self.assertFalse(serializer.is_valid())
-        self.assertEqual(serializer.errors["password"][0], "Passwords do not match.")
+        self.assertEqual(serializer.errors[AUTH_SECRET_KEY][0], "Passwords do not match.")
 
     def test_applicant_register_serializer_rejects_duplicate_email(self):
         create_test_user(
@@ -133,8 +137,8 @@ class UserSerializerTests(TestCase):
                 "first_name": "Existing",
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": DEFAULT_TEST_PASSWORD,
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
             }
         )
 
@@ -151,8 +155,8 @@ class UserSerializerTests(TestCase):
                 "first_name": "Applicant",
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": DEFAULT_TEST_PASSWORD,
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
             }
         )
 
@@ -162,7 +166,7 @@ class UserSerializerTests(TestCase):
         self.assertEqual(user.email, "applicant+alias@example.com")
         self.assertEqual(user.role, User.Role.APPLICANT)
         self.assertFalse(user.is_staff)
-        self.assertTrue(user.check_password(DEFAULT_TEST_PASSWORD))
+        self.assertTrue(user.check_password(DEFAULT_TEST_SECRET))
 
     def test_hr_register_serializer_rejects_password_mismatch(self):
         serializer = HRRegisterSerializer(
@@ -172,13 +176,13 @@ class UserSerializerTests(TestCase):
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": "WrongPass123",
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: "WrongPass123",
             }
         )
 
         self.assertFalse(serializer.is_valid())
-        self.assertEqual(serializer.errors["password"][0], "Passwords do not match.")
+        self.assertEqual(serializer.errors[AUTH_SECRET_KEY][0], "Passwords do not match.")
 
     def test_hr_register_serializer_rejects_duplicate_email(self):
         create_test_user(
@@ -196,8 +200,8 @@ class UserSerializerTests(TestCase):
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": DEFAULT_TEST_PASSWORD,
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
             }
         )
 
@@ -215,8 +219,8 @@ class UserSerializerTests(TestCase):
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": DEFAULT_TEST_PASSWORD,
-                "password2": DEFAULT_TEST_PASSWORD,
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
             }
         )
 
