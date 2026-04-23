@@ -1,5 +1,9 @@
-from .settings import *  # noqa: F401,F403
 from . import settings
+
+
+for name in dir(settings):
+    if name.isupper():
+        globals()[name] = getattr(settings, name)
 
 
 BASE_DIR = settings.BASE_DIR
