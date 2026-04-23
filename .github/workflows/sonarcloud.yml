@@ -39,7 +39,7 @@ jobs:
         working-directory: backend
         env:
           DJANGO_SETTINGS_MODULE: core.test_settings
-          SECRET_KEY: ci-test-secret
+          SECRET_KEY: ci-test-secret-key-with-32-plus-bytes
         run: |
           coverage run --source=. manage.py test --settings=core.test_settings
           coverage xml -o coverage.xml
