@@ -2,8 +2,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { jobsAPI, applicationsAPI, shortlistAPI } from "@/lib/api";
+import {
+  jobsAPI,
+  applicationsAPI,
+  shortlistAPI,
+  extractApiErrorMessage,
+} from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 import type { Application, Job, DaySummary } from "@/types";
 import { PageLoader } from "@/components/shared/LoadingSpinner";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -65,6 +71,136 @@ interface MobileDrawerProps {
   children: React.ReactNode;
 }
 
+type NoticeTone = "success" | "error" | "info";
+
+interface InlineNotice {
+  title: string;
+  message: string;
+  tone: NoticeTone;
+}
+
+const noticeStyles: Record<
+  NoticeTone,
+  { shell: string; icon: string; bar: string; title: string }
+> = {
+  success: {
+    shell: "border-emerald-200 bg-emerald-50/95 text-emerald-900",
+    icon: "bg-emerald-100 text-emerald-700",
+    bar: "bg-emerald-500",
+    title: "text-emerald-900",
+  },
+  error: {
+    shell: "border-red-200 bg-red-50/95 text-red-900",
+    icon: "bg-red-100 text-red-700",
+    bar: "bg-red-500",
+    title: "text-red-900",
+  },
+  info: {
+    shell: "border-violet-200 bg-white/95 text-slate-800",
+    icon: "bg-violet-100 text-violet-700",
+    bar: "bg-violet-500",
+    title: "text-slate-900",
+  },
+};
+
+function InlineNotification({
+  notice,
+  onClose,
+}: Readonly<{
+  notice: InlineNotice;
+  onClose: () => void;
+}>) {
+  const styles = noticeStyles[notice.tone];
+
+  return (
+    <div className="fixed right-4 top-4 z-[60] w-[min(92vw,420px)] animate-[fadeIn_.2s_ease-out]">
+      <div
+        className={`relative overflow-hidden rounded-2xl border shadow-lg backdrop-blur ${styles.shell}`}
+        style={{ boxShadow: "0 18px 45px rgba(15, 23, 42, 0.16)" }}
+      >
+        <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
+        <div className="flex gap-3 p-4 pt-5">
+          <div
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${styles.icon}`}
+          >
+            {notice.tone === "success" ? (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            ) : notice.tone === "error" ? (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v4m0 4h.01M5.07 19h13.86A2 2 0 0020.66 16L13.73 4a2 2 0 00-3.46 0L3.34 16A2 2 0 005.07 19z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className={`text-sm font-bold ${styles.title}`}>
+              {notice.title}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              {notice.message}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-white/70 hover:text-slate-700"
+            aria-label="Dismiss notification"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ────────────────────────────────────────────────────────
    Mobile Drawer component
 ──────────────────────────────────────────────────────── */
@@ -77,7 +213,7 @@ function MobileDrawer({
 
   const close = useCallback(() => {
     setClosing(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setClosing(false);
       onClose();
     }, 240);
@@ -450,24 +586,47 @@ export default function HRJobApplicationsPage() {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [notice, setNotice] = useState<InlineNotice | null>(null);
+
+  const showNotice = useCallback(
+    (title: string, message: string, tone: NoticeTone = "info") => {
+      setNotice({ title, message, tone });
+    },
+    [],
+  );
+
+  const refreshDaySummary = useCallback(async () => {
+    const { data } = await applicationsAPI.dailySummary(Number(id));
+    setDays(data);
+  }, [id]);
 
   useEffect(() => {
-    if (isApplicant) {
-      router.replace("/jobs");
-      return;
-    }
-    if (!user && !isHR) {
-      router.replace("/auth/login");
-      return;
-    }
-    loadJob();
-  }, [isHR, isApplicant, id]);
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
-  useEffect(() => {
-    loadApps(selectedDate);
-  }, [selectedDate]);
+  const loadApps = useCallback(
+    async (date: string) => {
+      setAppsLoading(true);
+      setSelected(null);
+      setDrawerOpen(false);
+      try {
+        const { data } = await applicationsAPI.byJob(
+          Number(id),
+          date || undefined,
+        );
+        setApps(data);
+      } catch {
+        setApps([]);
+      } finally {
+        setAppsLoading(false);
+      }
+    },
+    [id],
+  );
 
-  const loadJob = async () => {
+  const loadJob = useCallback(async () => {
     setLoading(true);
     try {
       const [{ data: j }, { data: d }] = await Promise.all([
@@ -483,24 +642,23 @@ export default function HRJobApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, loadApps, router]);
 
-  const loadApps = async (date: string) => {
-    setAppsLoading(true);
-    setSelected(null);
-    setDrawerOpen(false);
-    try {
-      const { data } = await applicationsAPI.byJob(
-        Number(id),
-        date || undefined,
-      );
-      setApps(data);
-    } catch {
-      setApps([]);
-    } finally {
-      setAppsLoading(false);
+  useEffect(() => {
+    if (isApplicant) {
+      router.replace("/jobs");
+      return;
     }
-  };
+    if (!user && !isHR) {
+      router.replace("/auth/login");
+      return;
+    }
+    loadJob();
+  }, [isHR, isApplicant, loadJob, router, user]);
+
+  useEffect(() => {
+    loadApps(selectedDate);
+  }, [loadApps, selectedDate]);
 
   const selectApplicant = (app: Application) => {
     setSelected(app);
@@ -535,13 +693,85 @@ export default function HRJobApplicationsPage() {
   };
 
   const bulkShortlist = async () => {
+    const safeThreshold = Math.max(0, Math.min(100, Number(threshold)));
+    if (!Number.isFinite(safeThreshold)) {
+      showNotice(
+        "Invalid threshold",
+        "Enter a shortlist threshold between 0 and 100.",
+        "error",
+      );
+      return;
+    }
+
     setBulkRunning(true);
     try {
-      const { data } = await shortlistAPI.bulkShortlist(Number(id), threshold);
-      alert(
-        `✅ ${data.shortlisted} candidates shortlisted (AI score ≥ ${threshold})`,
+      const previouslyShortlisted = apps.filter(
+        (app) =>
+          app.status === "SHORTLISTED" &&
+          app.ai_score != null &&
+          app.ai_score >= safeThreshold,
+      ).length;
+      const { data } = await shortlistAPI.bulkShortlist(
+        Number(id),
+        safeThreshold,
       );
-      loadApps(selectedDate);
+      const scoredCandidates = apps.filter(
+        (app) => app.ai_score != null,
+      ).length;
+      const aboveThreshold = apps.filter(
+        (app) => app.ai_score != null && app.ai_score >= safeThreshold,
+      ).length;
+      setThreshold(safeThreshold);
+      await Promise.all([loadApps(selectedDate), refreshDaySummary()]);
+
+      const alreadyShortlistedCount =
+        aboveThreshold > 0 && (data?.shortlisted ?? 0) === 0
+          ? previouslyShortlisted
+          : 0;
+
+      if ((data?.shortlisted ?? 0) === 0) {
+        if (scoredCandidates === 0) {
+          showNotice(
+            "No scored applications",
+            "No applications have been AI-scored yet, so bulk shortlist cannot shortlist anyone. Score or rescore the applications first.",
+            "info",
+          );
+        } else if (aboveThreshold === 0) {
+          showNotice(
+            "No candidates matched",
+            `No candidates meet the current cutoff of ${safeThreshold}. ${scoredCandidates} application(s) have AI scores, but none are at or above this threshold.`,
+            "info",
+          );
+        } else if (alreadyShortlistedCount > 0) {
+          showNotice(
+            "Already shortlisted",
+            `${alreadyShortlistedCount} candidate(s) already meet the cutoff of ${safeThreshold} and were already in Shortlisted status, so no new changes were needed.`,
+            "info",
+          );
+        } else {
+          showNotice(
+            "No shortlist changes",
+            data?.message || "No new candidates were shortlisted.",
+            "info",
+          );
+        }
+      } else {
+        showNotice(
+          "Bulk shortlist updated",
+          `${data?.shortlisted ?? 0} new candidate(s) were shortlisted at cutoff ${safeThreshold}.${data?.reverted ? ` ${data.reverted} candidate(s) moved back to Reviewing.` : ""}`,
+          "success",
+        );
+      }
+    } catch (error: unknown) {
+      showNotice(
+        "Shortlist update failed",
+        extractApiErrorMessage(
+          error,
+          "Bulk shortlist failed. Please try again.",
+          true,
+        ),
+        "error",
+      );
     } finally {
       setBulkRunning(false);
     }
@@ -629,6 +859,9 @@ export default function HRJobApplicationsPage() {
       className="flex flex-col"
       style={{ height: "100vh", overflow: "hidden" }}
     >
+      {notice && (
+        <InlineNotification notice={notice} onClose={() => setNotice(null)} />
+      )}
       {/* ── Top nav bar ── */}
       <nav
         className="bg-white border-b border-[var(--border)] shrink-0 z-30"
@@ -643,9 +876,11 @@ export default function HRJobApplicationsPage() {
               className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#1a3a8f,#3b82f6)" }}
             >
-              <img
+              <Image
                 src="/nueve-logo.png"
                 alt=""
+                width={28}
+                height={28}
                 className="w-7 h-7 object-contain"
               />
             </div>
@@ -698,10 +933,14 @@ export default function HRJobApplicationsPage() {
                 min={0}
                 max={100}
                 value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setThreshold(nextValue === "" ? NaN : Number(nextValue));
+                }}
                 className="w-12 px-2 py-1 border border-[var(--border)] rounded-lg text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
               />
               <button
+                type="button"
                 onClick={bulkShortlist}
                 disabled={bulkRunning}
                 className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition-colors whitespace-nowrap"
@@ -720,7 +959,11 @@ export default function HRJobApplicationsPage() {
                   await jobsAPI.update(job.id, { status: ns });
                   setJob((j) => (j ? { ...j, status: ns } : j));
                 } catch {
-                  alert("Could not update status.");
+                  showNotice(
+                    "Status update failed",
+                    "Could not update job status.",
+                    "error",
+                  );
                 }
               }}
               className="text-xs border border-[var(--border)] rounded-xl px-3 py-1.5 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer"

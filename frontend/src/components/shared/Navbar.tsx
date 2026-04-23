@@ -9,9 +9,7 @@ interface NavbarProps {
   variant?: "applicant" | "hr";
 }
 
-export default function Navbar({
-  variant = "applicant",
-}: Readonly<NavbarProps>) {
+export default function Navbar({ variant = "applicant" }: NavbarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const isHR = variant === "hr";
@@ -55,16 +53,13 @@ export default function Navbar({
             href={isHR ? "/hr/dashboard" : "/jobs"}
             className="flex items-center gap-2.5 shrink-0 group"
           >
-            <div
-              className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#1a3a8f,#3b82f6)" }}
-            >
+            <div className="relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center">
               <Image
                 src="/nueve-logo.png"
                 alt="Nueve IT Solutions"
-                width={32}
-                height={32}
-                className="object-contain w-8 h-8 drop-shadow"
+                width={36}
+                height={36}
+                className="object-contain w-9 h-9"
                 priority
               />
             </div>

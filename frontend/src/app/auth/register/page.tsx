@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { authAPI } from '@/lib/api'
+import { authAPI, extractApiErrorMessage } from '@/lib/api'
 import ErrorAlert from '@/components/shared/ErrorAlert'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import FormField from '@/components/ui/FormField'
@@ -27,11 +27,8 @@ export default function RegisterPage() {
     try {
       await authAPI.registerApplicant(form)
       router.push('/auth/login?registered=1')
-    } catch (err: any) {
-      const d = err?.response?.data
-      setError(typeof d === 'object' && d !== null
-        ? Object.entries(d).map(([k, v]) => `${k === 'non_field_errors' ? '' : k + ': '}${Array.isArray(v) ? v.join(', ') : v}`).join('\n').trim()
-        : 'Registration failed. Please try again.')
+    } catch (error: unknown) {
+      setError(extractApiErrorMessage(error, 'Registration failed. Please try again.', true))
     } finally { setLoading(false) }
   }
 

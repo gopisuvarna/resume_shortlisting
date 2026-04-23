@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { jobsAPI, applicationsAPI } from '@/lib/api'
-import type { Job } from '@/types'
+import type { DaySummary, Job } from '@/types'
 
 interface Stats { totalApps: number; shortlisted: number; todayApps: number }
 
@@ -26,7 +26,7 @@ export function useHRDashboard() {
           totalApps   += st.total
           shortlisted += st.by_status?.SHORTLISTED ?? 0
           const { data: ds } = await applicationsAPI.dailySummary(job.id)
-          todayApps += ds.find((d: any) => d.applied_at__date === today)?.total ?? 0
+          todayApps += (ds as DaySummary[]).find((day) => day.applied_at__date === today)?.total ?? 0
         } catch {}
       }
       setStats({ totalApps, shortlisted, todayApps })

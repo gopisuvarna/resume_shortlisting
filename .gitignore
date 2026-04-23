@@ -16,6 +16,24 @@ frontend/.next/
 frontend/out/
 frontend/coverage/
 frontend/*.tsbuildinfo
+frontend/.turbo/
+frontend/.vercel/
+frontend/playwright-report/
+frontend/test-results/
+
+# Backend build and test artifacts
+backend/db.sqlite3
+backend/staticfiles/
+backend/.coverage
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/test_media/
+
+# Root-level Python test caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage/
 
 # Local generated assets and caches
 .androidjs/

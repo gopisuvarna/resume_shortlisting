@@ -7,7 +7,7 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-production-abc123xyz')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
@@ -23,8 +23,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'django_celery_results',
-    'django_celery_beat',
     'django_filters',
     # Local apps
     'users',
@@ -75,23 +73,7 @@ DATABASES = {
     }
 }
 
-# ── Redis + Celery ───────────────────────────────────────────────────────────
-REDIS_URL              = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_BROKER_URL      = REDIS_URL
-CELERY_RESULT_BACKEND  = 'django-db'
-CELERY_ACCEPT_CONTENT  = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_TIMEZONE        = 'UTC'
-CELERY_BEAT_SCHEDULER  = 'django_celery_beat.schedulers:DatabaseScheduler'
-CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_ALWAYS_EAGER', 'False') == 'True'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
-        'TIMEOUT': 300,
-    }
-}
 
 # ── JWT Auth ────────────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
@@ -183,6 +165,5 @@ LOGGING = {
     'root': {'handlers': ['console'], 'level': 'INFO'},
     'loggers': {
         'django': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
-        'celery': {'handlers': ['console'], 'level': 'INFO',    'propagate': False},
     },
 }

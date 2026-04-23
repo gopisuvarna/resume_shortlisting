@@ -9,7 +9,7 @@ Full-stack recruitment platform with role-based access, AI-powered shortlisting,
 | Frontend    | Next.js 14 (App Router), React 18, Tailwind CSS           |
 | Backend     | Django 5, Django REST Framework, SimpleJWT                |
 | Database    | PostgreSQL 16                                             |
-| Cache/Queue | Redis 7, Celery 5                                         |
+| Cache       | Redis 7                                                  |
 | ML/Scoring  | sentence-transformers, FAISS, BM25, scikit-learn, PyMuPDF |
 | Server      | Gunicorn                                                  |
 
@@ -26,7 +26,7 @@ Full-stack recruitment platform with role-based access, AI-powered shortlisting,
 
 ```text
 hr-portal/
-  backend/        # Django API + Celery worker
+  backend/        # Django API
   frontend/       # Next.js web app
   docker-compose.yml
   sonar-project.properties
@@ -90,13 +90,6 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Start Celery worker in another terminal:
-
-```bash
-cd backend
-celery -A core worker -l info -c 4 --without-heartbeat
-```
-
 ### Frontend
 
 ```bash
@@ -121,7 +114,6 @@ DB_HOST=localhost
 DB_PORT=5432
 
 REDIS_URL=redis://localhost:6379/0
-CELERY_ALWAYS_EAGER=False
 
 COMPANY_NAME=Nueve IT Solutions
 HR_INVITE_CODE=

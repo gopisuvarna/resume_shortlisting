@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { extractApiErrorMessage } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import ErrorAlert from "@/components/shared/ErrorAlert";
@@ -22,8 +23,14 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err?.response?.data?.error || "Invalid email or password.");
+    } catch (error: unknown) {
+      setError(
+        extractApiErrorMessage(
+          error,
+          "Invalid email or password.",
+          true,
+        ),
+      );
     } finally {
       setLoading(false);
     }

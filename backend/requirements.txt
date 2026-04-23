@@ -8,11 +8,8 @@ django-filter==24.2
 # Database
 psycopg2-binary==2.9.9
 
-# Cache / Queue
-celery==5.4.0
+# Cache
 redis==5.0.7
-django-celery-results==2.5.1
-django-celery-beat==2.6.0
 
 # PDF Parsing
 # (Replaced by PyMuPDF in ML engine)

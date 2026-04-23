@@ -52,24 +52,6 @@ services:
       redis:
         condition: service_healthy
 
-  worker:
-    build:
-      context: ./backend
-    restart: unless-stopped
-    command: celery -A core worker -l info -c 4 --without-heartbeat
-    env_file: ./backend/.env.example
-    environment:
-      DEBUG: "False"
-      DB_HOST: db
-      REDIS_URL: redis://redis:6379/0
-    volumes:
-      - media_files:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   frontend:
     build:
       context: ./frontend
