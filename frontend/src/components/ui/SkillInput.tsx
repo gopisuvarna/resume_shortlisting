@@ -15,7 +15,7 @@ export default function SkillInput({
   placeholder = 'Type a skill and press Enter',
   quickSuggestions,
   chipVariant = 'indigo',
-}: SkillInputProps) {
+}: Readonly<SkillInputProps>) {
   const [input, setInput] = useState('')
 
   const add = (s?: string) => {
@@ -31,7 +31,10 @@ export default function SkillInput({
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); add() }
     if (e.key === 'Backspace' && !input && skills.length) {
-      remove(skills[skills.length - 1])
+      const lastSkill = skills.at(-1)
+      if (lastSkill) {
+        remove(lastSkill)
+      }
     }
   }
 
@@ -64,7 +67,7 @@ export default function SkillInput({
         </button>
       </div>
 
-      {quickSuggestions && quickSuggestions.filter(s => !skills.includes(s)).length > 0 && (
+      {quickSuggestions && quickSuggestions.some(s => !skills.includes(s)) && (
         <div className="flex flex-wrap gap-1.5">
           {quickSuggestions.filter(s => !skills.includes(s)).map(s => (
             <button

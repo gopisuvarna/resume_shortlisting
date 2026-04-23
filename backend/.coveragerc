@@ -1,0 +1,15 @@
+[run]
+branch = True
+source =
+    applications
+    jobs
+    shortlist
+    users
+    core
+
+[report]
+omit =
+    */migrations/*
+    */__init__.py
+    manage.py
+    core/test_settings.py

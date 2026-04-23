@@ -19,6 +19,7 @@ export default function HRJobsPage() {
   const [search, setSearch] = useState("");
   const jobSuffix = jobs.length === 1 ? "" : "s";
   const openingsSuffix = (count: number) => (count === 1 ? "" : "s");
+  const hasSearch = search.trim() !== "";
   const visibleJobs = jobs.filter(
     (j) =>
       j.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -33,7 +34,7 @@ export default function HRJobsPage() {
     jobsContent = (
       <div className="card p-12 text-center">
         <p className="font-display font-bold text-slate-700 mb-1.5">
-          {search ? "No jobs match your search" : "No jobs posted yet"}
+          {hasSearch ? "No jobs match your search" : "No jobs posted yet"}
         </p>
         <p className="text-slate-400 text-sm mb-6">
           Post your first job to start receiving applications
@@ -201,11 +202,13 @@ export default function HRJobsPage() {
       router.replace("/jobs");
       return;
     }
-    if (!user) {
-      router.replace("/auth/login");
+    if (user) {
+      fetchJobs();
       return;
     }
-    fetchJobs();
+    if (!isHR) {
+      router.replace("/auth/login");
+    }
   }, [user, isHR, isApplicant, authLoading, router]);
 
   const fetchJobs = async () => {

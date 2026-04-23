@@ -76,7 +76,7 @@ function makeApplication({
     applied_at: "2026-04-22T09:00:00Z",
     updated_at: "2026-04-22T09:00:00Z",
     applicant_name: name,
-    applicant_email: `${name.replace(/\s+/g, ".").toLowerCase()}@example.com`,
+    applicant_email: `${name.replaceAll(" ", ".").toLowerCase()}@example.com`,
     applicant_phone: "9999999999",
     ai_score: score,
     nlp_score: score - 2,

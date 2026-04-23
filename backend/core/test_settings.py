@@ -1,7 +1,8 @@
-from .settings import *  # noqa: F403,F401
+from . import settings
 
 
-SECRET_KEY = SECRET_KEY or "test-secret-key"
+BASE_DIR = settings.BASE_DIR
+SECRET_KEY = settings.SECRET_KEY or "test-secret-key"
 
 DATABASES = {
     "default": {
@@ -14,4 +15,4 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-MEDIA_ROOT = BASE_DIR / "test_media"  # noqa: F405
+MEDIA_ROOT = BASE_DIR / "test_media"

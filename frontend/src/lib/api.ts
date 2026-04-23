@@ -14,8 +14,8 @@ type ApiQueryParams = Record<string, ApiQueryParamValue>;
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+  if (typeof globalThis.window !== "undefined") {
+    const match = /(?:^|;\s*)access_token=([^;]+)/.exec(document.cookie);
     if (match && config.headers) {
       config.headers.Authorization = `Bearer ${decodeURIComponent(match[1])}`;
     }
@@ -31,8 +31,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && original && !original._retry) {
       original._retry = true;
       try {
-        const refreshMatch = document.cookie.match(
-          /(?:^|;\s*)refresh_token=([^;]+)/,
+        const refreshMatch = /(?:^|;\s*)refresh_token=([^;]+)/.exec(
+          document.cookie,
         );
         if (refreshMatch) {
           const { data } = await axios.post(`${BASE_URL}/token/refresh/`, {
@@ -46,13 +46,13 @@ api.interceptors.response.use(
         }
       } catch {
         clearAuthCookies();
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
+        if (typeof globalThis.window !== "undefined") {
+          globalThis.window.location.href = "/auth/login";
         }
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   },
 );
 
@@ -65,7 +65,8 @@ export function setCookie(name: string, value: string, days = 30) {
 
 export function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  const pattern = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`);
+  const match = pattern.exec(document.cookie);
   return match ? decodeURIComponent(match[1]) : null;
 }
 

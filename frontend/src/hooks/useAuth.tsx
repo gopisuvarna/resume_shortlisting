@@ -1,7 +1,7 @@
 'use client'
 import {
   createContext, useContext, useEffect,
-  useState, useCallback, ReactNode,
+  useState, useCallback, ReactNode, useMemo,
 } from 'react'
 import { useRouter } from 'next/navigation'
 import { authAPI, setCookie, clearAuthCookies } from '@/lib/api'
@@ -19,7 +19,7 @@ interface AuthCtx {
 
 const AuthContext = createContext<AuthCtx>({} as AuthCtx)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser]       = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router                = useRouter()
@@ -44,35 +44,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadProfile])
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const { data } = await authAPI.login({ email, password })
     setCookie('access_token',  data.tokens.access)
     setCookie('refresh_token', data.tokens.refresh)
     setCookie('user_role',     data.user.role)
     setUser(data.user)
     router.push(data.user.role === 'HR' ? '/hr/dashboard' : '/jobs')
-  }
+  }, [router])
 
-  const logout = () => {
-    const refreshToken = typeof document !== 'undefined'
-      ? (document.cookie.match(/(?:^|;\s*)refresh_token=([^;]+)/)?.[1] ?? '')
-      : ''
+  const logout = useCallback(() => {
+    const refreshTokenMatch = typeof document !== 'undefined'
+      ? /(?:^|;\s*)refresh_token=([^;]+)/.exec(document.cookie)
+      : null
+    const refreshToken = refreshTokenMatch?.[1] ?? ''
     clearAuthCookies()
     setUser(null)
-    if (refreshToken) {
+    if (refreshToken !== '') {
       authAPI.logout({ refresh: decodeURIComponent(refreshToken) }).catch(() => {})
     }
     router.push('/auth/login')
-  }
+  }, [router])
 
-  const refreshProfile = async () => { await loadProfile() }
+  const refreshProfile = useCallback(async () => { await loadProfile() }, [loadProfile])
+  const value = useMemo(() => ({
+    user,
+    loading,
+    login,
+    logout,
+    refreshProfile,
+    isHR: user?.role === 'HR',
+    isApplicant: user?.role === 'APPLICANT',
+  }), [user, loading, login, logout, refreshProfile])
 
   return (
-    <AuthContext.Provider value={{
-      user, loading, login, logout, refreshProfile,
-      isHR:        user?.role === 'HR',
-      isApplicant: user?.role === 'APPLICANT',
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

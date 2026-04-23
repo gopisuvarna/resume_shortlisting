@@ -23,9 +23,8 @@ export default function MyApplicationsPage() {
       router.replace("/hr/dashboard");
       return;
     }
-    if (!user) {
-      router.replace("/auth/login");
-    }
+    if (user) return;
+    router.replace("/auth/login");
   }, [user, isHR, authLoading, router]);
 
   const { apps, loading, withdraw, deleteApp } = useMyApplications(
@@ -63,6 +62,7 @@ export default function MyApplicationsPage() {
 
   const shortlisted = apps.filter((a) => POSITIVE.has(a.status));
   const applicationSuffix = apps.length === 1 ? "" : "s";
+  const shortlistedRoleSuffix = shortlisted.length > 1 ? "s" : "";
 
   let content: React.ReactNode;
   if (loading) {
@@ -140,7 +140,7 @@ export default function MyApplicationsPage() {
             <div>
               <p className="font-display font-bold text-emerald-800 text-sm">
                 Congratulations! You&apos;ve been shortlisted for{" "}
-                {shortlisted.length} role{shortlisted.length > 1 ? "s" : ""}!
+                {shortlisted.length} role{shortlistedRoleSuffix}!
               </p>
               <p className="text-sm text-emerald-700 mt-0.5">
                 The HR team will reach out to you soon. See details below.

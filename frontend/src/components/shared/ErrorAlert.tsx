@@ -1,6 +1,6 @@
 interface Props { message: string; onClose?: () => void; className?: string }
 
-export default function ErrorAlert({ message, onClose, className = '' }: Props) {
+export default function ErrorAlert({ message, onClose, className = '' }: Readonly<Props>) {
   if (!message) return null
   return (
     <div className={`flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 ${className}`}>

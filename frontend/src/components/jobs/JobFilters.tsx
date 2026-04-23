@@ -12,7 +12,7 @@ interface JobFiltersProps {
 
 export default function JobFilters({
   search, jobType, expLevel, onSearch, onJobType, onExpLevel, heroStyle,
-}: JobFiltersProps) {
+}: Readonly<JobFiltersProps>) {
   const inputCls = heroStyle
     ? `w-full px-4 py-3 rounded-xl text-sm font-semibold
        bg-white/95 text-slate-800 placeholder-slate-400

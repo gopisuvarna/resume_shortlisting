@@ -24,13 +24,13 @@ export default function JobsPage() {
   } = useJobsList();
   const positionSuffix = jobs.length === 1 ? "" : "s";
   const resultSuffix = jobs.length === 1 ? "" : "s";
+  const hasFilters = Boolean(search || jobType || expLevel);
   const headerLabel = loading
     ? "Loading…"
     : `${jobs.length} position${positionSuffix} available`;
-  const resultLabel =
-    search || jobType || expLevel
-      ? `${jobs.length} result${resultSuffix} found`
-      : "All open positions";
+  const resultLabel = hasFilters
+    ? `${jobs.length} result${resultSuffix} found`
+    : "All open positions";
 
   let jobListContent: React.ReactNode;
   if (loading) {
@@ -76,7 +76,8 @@ export default function JobsPage() {
   }
 
   useEffect(() => {
-    if (!authLoading && isHR) router.replace("/hr/dashboard");
+    if (authLoading || !isHR) return;
+    router.replace("/hr/dashboard");
   }, [isHR, authLoading, router]);
 
   return (

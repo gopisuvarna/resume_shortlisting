@@ -2,11 +2,14 @@
 Overrides Django's built-in createsuperuser so that superusers
 are always created with role=HR. Admin must be HR.
 """
-from django.contrib.auth.management.commands.createsuperuser import Command as Base
+from django.contrib.auth.management.commands.createsuperuser import (
+    Command as DjangoCreateSuperuserCommand,
+)
+from django.core.management.base import BaseCommand
 from users.models import User
 
 
-class Command(Base):
+class Command(DjangoCreateSuperuserCommand, BaseCommand):
     help = 'Create a superuser. Role is automatically set to HR.'
 
     def handle(self, *args, **options):

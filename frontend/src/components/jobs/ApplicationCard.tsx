@@ -16,7 +16,7 @@ const STATUS_ICON: Record<string, string> = {
   REJECTED:'✕', OFFERED:'🎉', HIRED:'✓', WITHDRAWN:'↩',
 }
 
-const POSITIVE  = ['SHORTLISTED','INTERVIEW','OFFERED','HIRED']
+const POSITIVE  = new Set(['SHORTLISTED','INTERVIEW','OFFERED','HIRED'])
 const TIMELINE  = ['PENDING','REVIEWING','SHORTLISTED','INTERVIEW','OFFERED','HIRED']
 
 interface Props {
@@ -27,10 +27,16 @@ interface Props {
   onDelete: (id: number) => void
 }
 
-export default function ApplicationCard({ app, withdrawing, deleting, onWithdraw, onDelete }: Props) {
+export default function ApplicationCard({ app, withdrawing, deleting, onWithdraw, onDelete }: Readonly<Props>) {
   const cfg = STATUS_CFG[app.status] || STATUS_CFG.PENDING
-  const isPositive = POSITIVE.includes(app.status)
+  const isPositive = POSITIVE.has(app.status)
   const curIdx = TIMELINE.indexOf(app.status)
+  let statusMessageCls = 'bg-slate-50 text-slate-600 border border-slate-100'
+  if (isPositive) {
+    statusMessageCls = 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
+  } else if (app.status === 'REJECTED') {
+    statusMessageCls = 'bg-red-50 text-red-700 border border-red-100'
+  }
 
   return (
     <div className={`card p-5 sm:p-6 fade-in ${isPositive ? 'ring-1 ring-emerald-200 shadow-emerald-50 shadow-md' : ''}`}>
@@ -59,13 +65,7 @@ export default function ApplicationCard({ app, withdrawing, deleting, onWithdraw
 
           {/* Status message */}
           {app.status_message && (
-            <div className={`text-sm rounded-xl px-4 py-3 mb-3 leading-relaxed ${
-              isPositive
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
-                : app.status === 'REJECTED'
-                  ? 'bg-red-50 text-red-700 border border-red-100'
-                  : 'bg-slate-50 text-slate-600 border border-slate-100'
-            }`}>
+            <div className={`text-sm rounded-xl px-4 py-3 mb-3 leading-relaxed ${statusMessageCls}`}>
               {app.status_message}
             </div>
           )}
@@ -97,12 +97,16 @@ export default function ApplicationCard({ app, withdrawing, deleting, onWithdraw
           {TIMELINE.map((s, i) => {
             const past = !['REJECTED','WITHDRAWN'].includes(app.status) && i <= curIdx
             const cur  = s === app.status
-            const dotColor = app.status === 'REJECTED'
-              ? (i === 0 ? 'bg-red-400' : 'bg-slate-200')
-              : app.status === 'WITHDRAWN'
-                ? 'bg-slate-200'
-                : cur ? 'bg-indigo-600 ring-2 ring-indigo-200 ring-offset-1'
-                  : past ? 'bg-indigo-400' : 'bg-slate-200'
+            let dotColor = 'bg-slate-200'
+            if (app.status === 'REJECTED') {
+              dotColor = i === 0 ? 'bg-red-400' : 'bg-slate-200'
+            } else if (app.status !== 'WITHDRAWN') {
+              if (cur) {
+                dotColor = 'bg-indigo-600 ring-2 ring-indigo-200 ring-offset-1'
+              } else if (past) {
+                dotColor = 'bg-indigo-400'
+              }
+            }
             return (
               <div key={s} className="flex flex-col items-center">
                 <div className={`w-2.5 h-2.5 rounded-full transition-colors ${dotColor}`} />

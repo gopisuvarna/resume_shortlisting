@@ -5,7 +5,7 @@ interface StatCardProps {
   colorCls: string
 }
 
-export function StatCard({ label, value, icon, colorCls }: StatCardProps) {
+export function StatCard({ label, value, icon, colorCls }: Readonly<StatCardProps>) {
   return (
     <div className="card p-5">
       <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg mb-3 ${colorCls}`}>
@@ -24,7 +24,7 @@ interface HRStatsProps {
   todayApps: number
 }
 
-export default function HRStats({ activeJobs, totalApps, shortlisted, todayApps }: HRStatsProps) {
+export default function HRStats({ activeJobs, totalApps, shortlisted, todayApps }: Readonly<HRStatsProps>) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard label="Active Jobs"        value={activeJobs}   icon="📋" colorCls="bg-blue-50 text-blue-700" />

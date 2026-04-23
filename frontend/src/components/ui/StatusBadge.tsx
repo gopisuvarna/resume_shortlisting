@@ -19,7 +19,7 @@ const STATUS_ICON: Record<string, string> = {
   ACTIVE: '●', CLOSED: '●', DRAFT: '✎', PAUSED: '⏸',
 }
 
-export default function StatusBadge({ status, showIcon = true }: { status: string; showIcon?: boolean }) {
+export default function StatusBadge({ status, showIcon = true }: Readonly<{ status: string; showIcon?: boolean }>) {
   const cfg = STATUS_CFG[status] || { label: status, cls: 'bg-slate-100 text-slate-600 ring-slate-200' }
   const icon = STATUS_ICON[status]
   return (

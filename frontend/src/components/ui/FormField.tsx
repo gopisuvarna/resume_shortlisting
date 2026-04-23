@@ -9,7 +9,7 @@ interface FormFieldProps {
   className?: string
 }
 
-export default function FormField({ label, required, hint, error, children, className = '' }: FormFieldProps) {
+export default function FormField({ label, required, hint, error, children, className = '' }: Readonly<FormFieldProps>) {
   return (
     <div className={className}>
       <label className={`label ${required ? 'label-required' : ''}`}>{label}</label>
