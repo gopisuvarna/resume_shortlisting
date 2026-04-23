@@ -1,89 +1,100 @@
-'use client'
+"use client";
 import {
-  createContext, useContext, useEffect,
-  useState, useCallback, ReactNode, useMemo,
-} from 'react'
-import { useRouter } from 'next/navigation'
-import { authAPI, setCookie, clearAuthCookies } from '@/lib/api'
-import type { User } from '@/types'
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+  useMemo,
+} from "react";
+import { useRouter } from "next/navigation";
+import { authAPI, setCookie, clearAuthCookies } from "@/lib/api";
+import type { User } from "@/types";
 
 interface AuthCtx {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  refreshProfile: () => Promise<void>
-  isHR: boolean
-  isApplicant: boolean
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  refreshProfile: () => Promise<void>;
+  isHR: boolean;
+  isApplicant: boolean;
 }
 
-const AuthContext = createContext<AuthCtx>({} as AuthCtx)
+const AuthContext = createContext<AuthCtx>({} as AuthCtx);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const [user, setUser]       = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router                = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const loadProfile = useCallback(async () => {
     try {
-      const { data } = await authAPI.profile()
-      setUser(data)
+      const { data } = await authAPI.profile();
+      setUser(data);
     } catch {
-      clearAuthCookies()
-      setUser(null)
+      clearAuthCookies();
+      setUser(null);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    const hasCookie = typeof document !== 'undefined' &&
-      document.cookie.includes('access_token=')
+    const hasCookie =
+      typeof document !== "undefined" &&
+      document.cookie.includes("access_token=");
     if (hasCookie) {
-      loadProfile().finally(() => setLoading(false))
+      loadProfile().finally(() => setLoading(false));
     } else {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [loadProfile])
+  }, [loadProfile]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await authAPI.login({ email, password })
-    setCookie('access_token',  data.tokens.access)
-    setCookie('refresh_token', data.tokens.refresh)
-    setCookie('user_role',     data.user.role)
-    setUser(data.user)
-    router.push(data.user.role === 'HR' ? '/hr/dashboard' : '/jobs')
-  }, [router])
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const { data } = await authAPI.login({ email, password });
+      setCookie("access_token", data.tokens.access);
+      setCookie("refresh_token", data.tokens.refresh);
+      setCookie("user_role", data.user.role);
+      setUser(data.user);
+      router.push(data.user.role === "HR" ? "/hr/dashboard" : "/jobs");
+    },
+    [router],
+  );
 
   const logout = useCallback(() => {
-    const refreshTokenMatch = typeof document !== 'undefined'
-      ? /(?:^|;\s*)refresh_token=([^;]+)/.exec(document.cookie)
-      : null
-    const refreshToken = refreshTokenMatch?.[1] ?? ''
-    clearAuthCookies()
-    setUser(null)
-    if (refreshToken === '') {
-      router.push('/auth/login')
-      return
+    const refreshTokenMatch =
+      typeof document !== "undefined"
+        ? /(?:^|;\s*)refresh_token=([^;]+)/.exec(document.cookie)
+        : null;
+    const refreshToken = refreshTokenMatch?.[1] ?? "";
+    clearAuthCookies();
+    setUser(null);
+    if (refreshToken !== "") {
+      authAPI
+        .logout({ refresh: decodeURIComponent(refreshToken) })
+        .catch(() => {});
     }
-    authAPI.logout({ refresh: decodeURIComponent(refreshToken) }).catch(() => {})
-    router.push('/auth/login')
-  }, [router])
+    router.push("/auth/login");
+  }, [router]);
 
-  const refreshProfile = useCallback(async () => { await loadProfile() }, [loadProfile])
-  const value = useMemo(() => ({
-    user,
-    loading,
-    login,
-    logout,
-    refreshProfile,
-    isHR: user?.role === 'HR',
-    isApplicant: user?.role === 'APPLICANT',
-  }), [user, loading, login, logout, refreshProfile])
+  const refreshProfile = useCallback(async () => {
+    await loadProfile();
+  }, [loadProfile]);
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      refreshProfile,
+      isHR: user?.role === "HR",
+      isApplicant: user?.role === "APPLICANT",
+    }),
+    [user, loading, login, logout, refreshProfile],
+  );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext);
