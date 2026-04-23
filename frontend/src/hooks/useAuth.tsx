@@ -64,9 +64,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const logout = useCallback(() => {
     const refreshTokenMatch =
-      typeof document !== "undefined"
-        ? /(?:^|;\s*)refresh_token=([^;]+)/.exec(document.cookie)
-        : null;
+      typeof document === "undefined"
+        ? null
+        : /(?:^|;\s*)refresh_token=([^;]+)/.exec(document.cookie);
     const refreshToken = refreshTokenMatch?.[1] ?? "";
     clearAuthCookies();
     setUser(null);
