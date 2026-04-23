@@ -77,8 +77,8 @@ export default function HRRegisterPage() {
             </FormField>
 
             <div className="p-4 bg-violet-50 border border-violet-200 rounded-xl">
-              <label className="block text-sm font-semibold text-violet-800 mb-1.5">Invite Code</label>
-              <input type="text" value={form.invite_code} onChange={set('invite_code')}
+              <label htmlFor="invite_code" className="block text-sm font-semibold text-violet-800 mb-1.5">Invite Code</label>
+              <input id="invite_code" type="text" value={form.invite_code} onChange={set('invite_code')}
                 placeholder="Provided by your admin"
                 className="w-full px-4 py-2.5 border border-violet-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white" />
               <p className="mt-1.5 text-xs text-violet-600">Leave blank in development.</p>

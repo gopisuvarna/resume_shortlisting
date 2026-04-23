@@ -14,7 +14,7 @@ type ApiQueryParams = Record<string, ApiQueryParamValue>;
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 api.interceptors.request.use((config) => {
-  if (typeof globalThis.window !== "undefined") {
+  if (globalThis.window) {
     const match = /(?:^|;\s*)access_token=([^;]+)/.exec(document.cookie);
     if (match && config.headers) {
       config.headers.Authorization = `Bearer ${decodeURIComponent(match[1])}`;
@@ -46,7 +46,7 @@ api.interceptors.response.use(
         }
       } catch {
         clearAuthCookies();
-        if (typeof globalThis.window !== "undefined") {
+        if (globalThis.window) {
           globalThis.window.location.href = "/auth/login";
         }
       }

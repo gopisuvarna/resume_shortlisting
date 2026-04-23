@@ -19,7 +19,8 @@ export default function JobCard({ job }: Readonly<{ job: Job }>) {
   const typeCls = TYPE_COLORS[job.job_type] || 'bg-slate-100 text-slate-600 ring-slate-200'
   const icon = DEPT_ICONS[job.department] || 'ðŸ¢'
   const posted = new Date(job.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-  const openingsLabel = `${job.openings} opening${job.openings !== 1 ? 's' : ''}`
+  const openingSuffix = job.openings === 1 ? '' : 's'
+  const openingsLabel = `${job.openings} opening${openingSuffix}`
   const mobileFooterLabel = `${job.total_applicants} applied Â· ${openingsLabel}`
 
   return (

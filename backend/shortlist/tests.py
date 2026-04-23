@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -36,10 +37,11 @@ class ShortlistTestDataMixin:
 
     def create_user(self, *, role: str, prefix: str) -> User:
         index = next(self._sequence)
+        password = f"test-{get_random_string(16)}"
         return User.objects.create_user(
             username=f"{prefix}-{index}",
             email=f"{prefix}-{index}@example.com",
-            password="password123",
+            password=password,
             first_name=prefix.title(),
             last_name="User",
             role=role,

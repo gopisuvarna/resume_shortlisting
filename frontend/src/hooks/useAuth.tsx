@@ -60,9 +60,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const refreshToken = refreshTokenMatch?.[1] ?? ''
     clearAuthCookies()
     setUser(null)
-    if (refreshToken !== '') {
-      authAPI.logout({ refresh: decodeURIComponent(refreshToken) }).catch(() => {})
+    if (refreshToken === '') {
+      router.push('/auth/login')
+      return
     }
+    authAPI.logout({ refresh: decodeURIComponent(refreshToken) }).catch(() => {})
     router.push('/auth/login')
   }, [router])
 
