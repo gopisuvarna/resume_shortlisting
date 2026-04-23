@@ -133,6 +133,58 @@ class ShortlistViewTests(ShortlistTestDataMixin, TestCase):
         self.assertEqual(response.data[0]["ai_score"], high_score.final_score)
         self.assertGreater(high_score.final_score, low_score.final_score)
 
+    def test_get_returns_all_scored_applications_without_filters(self):
+        first = self.create_application(
+            status_value=Application.Status.REVIEWING,
+            final_score=68.0,
+            recommendation="YES",
+        )
+        second = self.create_application(
+            status_value=Application.Status.SHORTLISTED,
+            final_score=88.0,
+            recommendation="STRONG_YES",
+        )
+        self.create_application(
+            final_score=None,
+            recommendation="STRONG_YES",
+        )
+        self.create_application(
+            job=self.other_job,
+            final_score=95.0,
+            recommendation="STRONG_YES",
+        )
+
+        self.authenticate_as(self.hr_user)
+        response = self.client.get(self.shortlist_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row["id"] for row in response.data], [second.id, first.id])
+
+    def test_get_filters_by_job_without_min_score_or_recommendation(self):
+        kept = self.create_application(
+            status_value=Application.Status.REVIEWING,
+            final_score=68.0,
+            recommendation="YES",
+        )
+        self.create_application(
+            job=self.other_job,
+            final_score=95.0,
+            recommendation="STRONG_YES",
+        )
+
+        self.authenticate_as(self.hr_user)
+        response = self.client.get(
+            self.shortlist_url,
+            {
+                "job_id": self.job.id,
+                "min_score": 0,
+                "recommendation": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row["id"] for row in response.data], [kept.id])
+
     def test_post_requires_hr_role(self):
         self.authenticate_as(self.applicant_user)
 
