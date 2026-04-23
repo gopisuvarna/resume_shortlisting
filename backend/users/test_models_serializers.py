@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from test_utils import DEFAULT_TEST_PASSWORD, DEFAULT_TEST_PHONE, create_test_user
 from users.models import User
 from users.serializers import (
     ApplicantRegisterSerializer,
@@ -39,10 +40,8 @@ class UserModelTests(TestCase):
         self.assertFalse(user.is_applicant)
 
     def test_saving_applicant_clears_staff_and_superuser(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="staff-applicant",
-            email="staff-applicant@example.com",
-            password="StrongPass123",
             first_name="Staff",
             last_name="Applicant",
             role=User.Role.APPLICANT,
@@ -55,10 +54,8 @@ class UserModelTests(TestCase):
         self.assertEqual(user.role, User.Role.APPLICANT)
 
     def test_saving_hr_forces_staff_access(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="hr-user",
-            email="hr-user@example.com",
-            password="StrongPass123",
             first_name="HR",
             last_name="User",
             role=User.Role.HR,
@@ -69,10 +66,8 @@ class UserModelTests(TestCase):
         self.assertEqual(user.role, User.Role.HR)
 
     def test_applicant_role_clears_staff_flag_even_if_requested(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="staff-user",
-            email="staff-user@example.com",
-            password="StrongPass123",
             first_name="Staff",
             last_name="User",
             role=User.Role.APPLICANT,
@@ -83,10 +78,8 @@ class UserModelTests(TestCase):
         self.assertFalse(user.is_staff)
 
     def test_applicant_role_clears_superuser_flag_even_if_requested(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="super-user",
-            email="super-user@example.com",
-            password="StrongPass123",
             first_name="Super",
             last_name="User",
             role=User.Role.APPLICANT,
@@ -98,10 +91,9 @@ class UserModelTests(TestCase):
         self.assertFalse(user.is_superuser)
 
     def test_string_representation_includes_full_name_email_and_role(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="repr-user",
             email="repr@example.com",
-            password="StrongPass123",
             first_name="Repr",
             last_name="User",
             role=User.Role.HR,
@@ -117,8 +109,8 @@ class UserSerializerTests(TestCase):
                 "email": "new@example.com",
                 "first_name": "New",
                 "last_name": "User",
-                "phone": "9999999999",
-                "password": "StrongPass123",
+                "phone": DEFAULT_TEST_PHONE,
+                "password": DEFAULT_TEST_PASSWORD,
                 "password2": "WrongPass123",
             }
         )
@@ -127,10 +119,9 @@ class UserSerializerTests(TestCase):
         self.assertEqual(serializer.errors["password"][0], "Passwords do not match.")
 
     def test_applicant_register_serializer_rejects_duplicate_email(self):
-        User.objects.create_user(
+        create_test_user(
             username="existing",
             email="existing@example.com",
-            password="StrongPass123",
             first_name="Existing",
             last_name="User",
             role=User.Role.APPLICANT,
@@ -141,9 +132,9 @@ class UserSerializerTests(TestCase):
                 "email": "EXISTING@example.com",
                 "first_name": "Existing",
                 "last_name": "User",
-                "phone": "9999999999",
-                "password": "StrongPass123",
-                "password2": "StrongPass123",
+                "phone": DEFAULT_TEST_PHONE,
+                "password": DEFAULT_TEST_PASSWORD,
+                "password2": DEFAULT_TEST_PASSWORD,
             }
         )
 
@@ -159,9 +150,9 @@ class UserSerializerTests(TestCase):
                 "email": "Applicant+Alias@Example.com",
                 "first_name": "Applicant",
                 "last_name": "User",
-                "phone": "9999999999",
-                "password": "StrongPass123",
-                "password2": "StrongPass123",
+                "phone": DEFAULT_TEST_PHONE,
+                "password": DEFAULT_TEST_PASSWORD,
+                "password2": DEFAULT_TEST_PASSWORD,
             }
         )
 
@@ -171,7 +162,7 @@ class UserSerializerTests(TestCase):
         self.assertEqual(user.email, "applicant+alias@example.com")
         self.assertEqual(user.role, User.Role.APPLICANT)
         self.assertFalse(user.is_staff)
-        self.assertTrue(user.check_password("StrongPass123"))
+        self.assertTrue(user.check_password(DEFAULT_TEST_PASSWORD))
 
     def test_hr_register_serializer_rejects_password_mismatch(self):
         serializer = HRRegisterSerializer(
@@ -179,9 +170,9 @@ class UserSerializerTests(TestCase):
                 "email": "hr@example.com",
                 "first_name": "HR",
                 "last_name": "User",
-                "phone": "9999999999",
+                "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": "StrongPass123",
+                "password": DEFAULT_TEST_PASSWORD,
                 "password2": "WrongPass123",
             }
         )
@@ -190,10 +181,9 @@ class UserSerializerTests(TestCase):
         self.assertEqual(serializer.errors["password"][0], "Passwords do not match.")
 
     def test_hr_register_serializer_rejects_duplicate_email(self):
-        User.objects.create_user(
+        create_test_user(
             username="existing-hr",
             email="hr@example.com",
-            password="StrongPass123",
             first_name="Existing",
             last_name="Hr",
             role=User.Role.HR,
@@ -204,10 +194,10 @@ class UserSerializerTests(TestCase):
                 "email": "HR@example.com",
                 "first_name": "HR",
                 "last_name": "User",
-                "phone": "9999999999",
+                "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": "StrongPass123",
-                "password2": "StrongPass123",
+                "password": DEFAULT_TEST_PASSWORD,
+                "password2": DEFAULT_TEST_PASSWORD,
             }
         )
 
@@ -223,10 +213,10 @@ class UserSerializerTests(TestCase):
                 "email": "hr@example.com",
                 "first_name": "HR",
                 "last_name": "User",
-                "phone": "9999999999",
+                "phone": DEFAULT_TEST_PHONE,
                 "hr_department": "Engineering",
-                "password": "StrongPass123",
-                "password2": "StrongPass123",
+                "password": DEFAULT_TEST_PASSWORD,
+                "password2": DEFAULT_TEST_PASSWORD,
             }
         )
 
@@ -238,10 +228,9 @@ class UserSerializerTests(TestCase):
         self.assertEqual(user.hr_department, "Engineering")
 
     def test_user_serializer_exposes_full_name_and_read_only_fields(self):
-        user = User.objects.create_user(
+        user = create_test_user(
             username="serial-user",
             email="serial@example.com",
-            password="StrongPass123",
             first_name="Serial",
             last_name="User",
             role=User.Role.HR,
@@ -254,10 +243,9 @@ class UserSerializerTests(TestCase):
         self.assertEqual(data["email"], "serial@example.com")
 
     def test_gen_username_retries_when_generated_username_exists(self):
-        User.objects.create_user(
+        create_test_user(
             username="existing_aaaaaa",
             email="existing-user@example.com",
-            password="StrongPass123",
             first_name="Existing",
             last_name="User",
             role=User.Role.APPLICANT,

@@ -4,6 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from test_utils import create_test_user
 from applications.models import Application
 from jobs.models import Job
 
@@ -14,26 +15,23 @@ User = get_user_model()
 class JobViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.hr_user = User.objects.create_user(
+        self.hr_user = create_test_user(
             username="hr-owner",
             email="owner@example.com",
-            password="StrongPass123",
             first_name="Owner",
             last_name="Hr",
             role=User.Role.HR,
         )
-        self.other_hr_user = User.objects.create_user(
+        self.other_hr_user = create_test_user(
             username="hr-other",
             email="other@example.com",
-            password="StrongPass123",
             first_name="Other",
             last_name="Hr",
             role=User.Role.HR,
         )
-        self.applicant = User.objects.create_user(
+        self.applicant = create_test_user(
             username="applicant-one",
             email="applicant@example.com",
-            password="StrongPass123",
             first_name="Apply",
             last_name="Cant",
             role=User.Role.APPLICANT,

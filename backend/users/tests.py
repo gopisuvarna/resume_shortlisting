@@ -6,29 +6,25 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-
+from test_utils import DEFAULT_TEST_PASSWORD, DEFAULT_TEST_PHONE, create_test_user
 User = get_user_model()
 
 
 class UserViewsTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.password = "StrongPass123"
-        self.user = User.objects.create_user(
+        self.password = DEFAULT_TEST_PASSWORD
+        self.user = create_test_user(
             username="applicant-user",
-            email="applicant@example.com",
-            password=self.password,
+            role=User.Role.APPLICANT,
             first_name="App",
             last_name="Licant",
-            role=User.Role.APPLICANT,
         )
-        self.hr_user = User.objects.create_user(
+        self.hr_user = create_test_user(
             username="hr-user",
-            email="hr@example.com",
-            password=self.password,
+            role=User.Role.HR,
             first_name="H",
             last_name="R",
-            role=User.Role.HR,
             hr_department="Engineering",
         )
 
@@ -39,9 +35,9 @@ class UserViewsTests(TestCase):
                 "email": "New.User+Alias@Example.com",
                 "first_name": "New",
                 "last_name": "User",
-                "phone": "9999999999",
-                "password": "StrongPass123",
-                "password2": "StrongPass123",
+                "phone": DEFAULT_TEST_PHONE,
+                "password": DEFAULT_TEST_PASSWORD,
+                "password2": DEFAULT_TEST_PASSWORD,
             },
             format="json",
         )
@@ -60,10 +56,10 @@ class UserViewsTests(TestCase):
                     "email": "lead@example.com",
                     "first_name": "Lead",
                     "last_name": "Recruiter",
-                    "phone": "9999999999",
+                    "phone": DEFAULT_TEST_PHONE,
                     "hr_department": "Talent",
-                    "password": "StrongPass123",
-                    "password2": "StrongPass123",
+                    "password": DEFAULT_TEST_PASSWORD,
+                    "password2": DEFAULT_TEST_PASSWORD,
                     "invite_code": "wrong",
                 },
                 format="json",
@@ -75,7 +71,7 @@ class UserViewsTests(TestCase):
     def test_login_returns_user_and_tokens_for_valid_credentials(self):
         response = self.client.post(
             reverse("login"),
-            {"email": "APPLICANT@example.com", "password": self.password},
+            {"email": self.user.email.upper(), "password": self.password},
             format="json",
         )
 
@@ -97,7 +93,7 @@ class UserViewsTests(TestCase):
 
         response = self.client.post(
             reverse("change-password"),
-            {"old_password": "bad-password", "new_password": "NewStrong123"},
+            {"old_password": "bad-password", "new_password": "NewTestPass!456"},
             format="json",
         )
 
@@ -109,11 +105,11 @@ class UserViewsTests(TestCase):
 
         response = self.client.post(
             reverse("change-password"),
-            {"old_password": self.password, "new_password": "NewStrong123"},
+            {"old_password": self.password, "new_password": "NewTestPass!456"},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["message"], "Password changed.")
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password("NewStrong123"))
+        self.assertTrue(self.user.check_password("NewTestPass!456"))

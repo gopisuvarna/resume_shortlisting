@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 
+from test_utils import create_test_user
 from applications.models import Application
 from jobs.models import Job
 from jobs.serializers import JobHRSerializer, JobPublicSerializer
@@ -15,18 +16,16 @@ User = get_user_model()
 
 class JobModelSerializerTests(TestCase):
     def setUp(self):
-        self.hr_user = User.objects.create_user(
+        self.hr_user = create_test_user(
             username="job-hr",
             email="job-hr@example.com",
-            password="StrongPass123",
             first_name="Job",
             last_name="Hr",
             role=User.Role.HR,
         )
-        self.applicant = User.objects.create_user(
+        self.applicant = create_test_user(
             username="job-applicant",
             email="job-applicant@example.com",
-            password="StrongPass123",
             first_name="Job",
             last_name="Applicant",
             role=User.Role.APPLICANT,
@@ -158,26 +157,23 @@ class IsHROrReadOnlyPermissionTests(TestCase):
     def setUp(self):
         self.permission = IsHROrReadOnly()
         self.factory = APIRequestFactory()
-        self.hr_user = User.objects.create_user(
+        self.hr_user = create_test_user(
             username="perm-hr",
             email="perm-hr@example.com",
-            password="StrongPass123",
             first_name="Perm",
             last_name="Hr",
             role=User.Role.HR,
         )
-        self.applicant = User.objects.create_user(
+        self.applicant = create_test_user(
             username="perm-applicant",
             email="perm-applicant@example.com",
-            password="StrongPass123",
             first_name="Perm",
             last_name="Applicant",
             role=User.Role.APPLICANT,
         )
-        self.other_hr_user = User.objects.create_user(
+        self.other_hr_user = create_test_user(
             username="perm-other-hr",
             email="perm-other-hr@example.com",
-            password="StrongPass123",
             first_name="Other",
             last_name="Hr",
             role=User.Role.HR,

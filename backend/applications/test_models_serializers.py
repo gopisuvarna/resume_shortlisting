@@ -10,6 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 
+from test_utils import DEFAULT_TEST_PHONE, create_test_user
 from applications.models import Application, resume_upload_path
 from applications.serializers import (
     ApplicationApplicantSerializer,
@@ -45,22 +46,20 @@ class DummyDoc:
 class ApplicationModelSerializerTests(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
-        self.hr_user = User.objects.create_user(
+        self.hr_user = create_test_user(
             username="app-hr",
             email="app-hr@example.com",
-            password="StrongPass123",
             first_name="App",
             last_name="Hr",
             role=User.Role.HR,
         )
-        self.applicant = User.objects.create_user(
+        self.applicant = create_test_user(
             username="applicant",
             email="applicant@example.com",
-            password="StrongPass123",
             first_name="App",
             last_name="Licant",
             role=User.Role.APPLICANT,
-            phone="9999999999",
+            phone=DEFAULT_TEST_PHONE,
         )
         self.job = Job.objects.create(
             posted_by=self.hr_user,
@@ -233,10 +232,9 @@ class ApplicationModelSerializerTests(TestCase):
             extracted_text="Existing",
             resume_hash=duplicate_hash,
         )
-        other_user = User.objects.create_user(
+        other_user = create_test_user(
             username="duplicate-check",
             email="duplicate-check@example.com",
-            password="StrongPass123",
             first_name="Duplicate",
             last_name="Check",
             role=User.Role.APPLICANT,
