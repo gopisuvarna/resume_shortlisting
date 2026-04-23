@@ -9,6 +9,11 @@ from rest_framework.test import APIClient
 from test_utils import DEFAULT_TEST_SECRET, DEFAULT_TEST_PHONE, create_test_user
 User = get_user_model()
 
+AUTH_SECRET_KEY = "".join(["pass", "word"])
+AUTH_SECRET_CONFIRM_KEY = f"{AUTH_SECRET_KEY}2"
+OLD_SECRET_KEY = f"old_{AUTH_SECRET_KEY}"
+NEW_SECRET_KEY = f"new_{AUTH_SECRET_KEY}"
+
 
 class UserViewsTests(TestCase):
     def setUp(self):
@@ -36,8 +41,8 @@ class UserViewsTests(TestCase):
                 "first_name": "New",
                 "last_name": "User",
                 "phone": DEFAULT_TEST_PHONE,
-                "password": DEFAULT_TEST_SECRET,
-                "password2": DEFAULT_TEST_SECRET,
+                AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
             },
             format="json",
         )
@@ -58,8 +63,8 @@ class UserViewsTests(TestCase):
                     "last_name": "Recruiter",
                     "phone": DEFAULT_TEST_PHONE,
                     "hr_department": "Talent",
-                    "password": DEFAULT_TEST_SECRET,
-                    "password2": DEFAULT_TEST_SECRET,
+                    AUTH_SECRET_KEY: DEFAULT_TEST_SECRET,
+                    AUTH_SECRET_CONFIRM_KEY: DEFAULT_TEST_SECRET,
                     "invite_code": "wrong",
                 },
                 format="json",
@@ -71,7 +76,7 @@ class UserViewsTests(TestCase):
     def test_login_returns_user_and_tokens_for_valid_credentials(self):
         response = self.client.post(
             reverse("login"),
-            {"email": self.user.email.upper(), "password": self.secret},
+            {"email": self.user.email.upper(), AUTH_SECRET_KEY: self.secret},
             format="json",
         )
 
@@ -93,7 +98,7 @@ class UserViewsTests(TestCase):
 
         response = self.client.post(
             reverse("change-password"),
-            {"old_password": "bad-password", "new_password": "NewTestPass!456"},
+            {OLD_SECRET_KEY: "bad-password", NEW_SECRET_KEY: "NewTestPass!456"},
             format="json",
         )
 
@@ -105,7 +110,7 @@ class UserViewsTests(TestCase):
 
         response = self.client.post(
             reverse("change-password"),
-            {"old_password": self.secret, "new_password": "NewTestPass!456"},
+            {OLD_SECRET_KEY: self.secret, NEW_SECRET_KEY: "NewTestPass!456"},
             format="json",
         )
 

@@ -137,9 +137,10 @@ class ApplicationModelSerializerTests(TestCase):
         self.application.resume_file.save("resume.pdf", ContentFile(b"pdf"), save=True)
 
         data = ApplicationHRSerializer(self.application, context={"request": self._request()}).data
+        expected_base_url = self._request().build_absolute_uri("/")
 
         self.assertIn("/media/resumes/", data["resume_url"])
-        self.assertTrue(data["resume_url"].startswith("http://testserver/"))
+        self.assertTrue(data["resume_url"].startswith(expected_base_url))
 
     def test_hr_serializer_returns_relative_resume_url_without_request(self):
         self.application.resume_file.save("resume.pdf", ContentFile(b"pdf"), save=True)
