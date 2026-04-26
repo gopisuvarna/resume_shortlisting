@@ -132,6 +132,14 @@ class JobViewSetTests(TestCase):
         self.assertEqual(response.data["avg_ai_score"], 84.0)
         self.assertEqual(response.data["scored_count"], 1)
 
+    def test_stats_forbids_non_hr_users(self):
+        self.client.force_authenticate(self.applicant)
+
+        response = self.client.get(f"/api/jobs/{self.active_job.id}/stats/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["error"], "Forbidden.")
+
     def test_my_jobs_forbids_non_hr_users(self):
         self.client.force_authenticate(self.applicant)
 
@@ -139,3 +147,11 @@ class JobViewSetTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["error"], "Forbidden.")
+
+    def test_my_jobs_returns_owned_jobs_for_hr(self):
+        self.client.force_authenticate(self.hr_user)
+
+        response = self.client.get("/api/jobs/my_jobs/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual({row["id"] for row in response.data}, {self.active_job.id, self.draft_job.id})

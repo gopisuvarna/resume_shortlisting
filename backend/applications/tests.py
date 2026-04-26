@@ -5,11 +5,13 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.test.client import RequestFactory
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from test_utils import create_test_user
 from applications.models import Application
+from applications.views import ApplicationViewSet
 from jobs.models import Job
 
 
@@ -119,6 +121,26 @@ class ApplicationViewSetTests(TestCase):
         self.assertEqual(created.extracted_text, "Readable resume text")
         score_mock.assert_called_once_with(created)
 
+    def test_list_uses_hr_serializer_for_hr_users(self):
+        application = self._create_application()
+        self.client.force_authenticate(self.hr_user)
+
+        response = self.client.get("/api/applications/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["id"], application.id)
+        self.assertIn("applicant_name", response.data["results"][0])
+
+    def test_list_uses_applicant_serializer_for_applicants(self):
+        application = self._create_application()
+        self.client.force_authenticate(self.applicant)
+
+        response = self.client.get("/api/applications/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["id"], application.id)
+        self.assertNotIn("applicant_name", response.data["results"][0])
+
     def test_hr_cannot_create_application(self):
         self.client.force_authenticate(self.hr_user)
 
@@ -166,6 +188,23 @@ class ApplicationViewSetTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([row["id"] for row in response.data], [target.id])
 
+    def test_by_job_filters_by_date_when_provided(self):
+        target = self._create_application(applicant=self.applicant, final_score=91.0)
+        older = self._create_application(
+            applicant=self.other_applicant,
+            final_score=55.0,
+        )
+        Application.objects.filter(id=older.id).update(applied_at="2024-01-01T09:00:00Z")
+
+        self.client.force_authenticate(self.hr_user)
+        response = self.client.get(
+            "/api/applications/by_job/",
+            {"job_id": self.job.id, "date": target.applied_at.date().isoformat()},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([row["id"] for row in response.data], [target.id])
+
     def test_daily_summary_returns_counts_per_day(self):
         self._create_application(applicant=self.applicant, status_value=Application.Status.SHORTLISTED, final_score=88.0)
         self._create_application(applicant=self.other_applicant, status_value=Application.Status.PENDING, final_score=None)
@@ -178,6 +217,14 @@ class ApplicationViewSetTests(TestCase):
         self.assertEqual(response.data[0]["total"], 2)
         self.assertEqual(response.data[0]["shortlisted"], 1)
         self.assertEqual(response.data[0]["scored"], 1)
+
+    def test_daily_summary_requires_job_id(self):
+        self.client.force_authenticate(self.hr_user)
+
+        response = self.client.get("/api/applications/daily_summary/")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error"], "job_id required.")
 
     def test_update_status_rejects_invalid_values(self):
         application = self._create_application()
@@ -224,3 +271,19 @@ class ApplicationViewSetTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["error"], "Cannot withdraw at this stage.")
+
+    def test_withdraw_rejects_other_users_application(self):
+        application = self._create_application(applicant=self.other_applicant)
+        request = RequestFactory().post(f"/api/applications/{application.id}/withdraw/")
+        request.user = self.applicant
+
+        view = ApplicationViewSet()
+        view.request = request
+        view.kwargs = {"pk": application.id}
+        view.action = "withdraw"
+        view.get_object = lambda: application
+
+        response = view.withdraw(request, pk=application.id)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["error"], "Not your application.")
