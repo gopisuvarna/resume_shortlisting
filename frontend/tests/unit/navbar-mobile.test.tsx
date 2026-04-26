@@ -86,10 +86,14 @@ describe("Navbar mobile menu", () => {
     const hamburger = clickables.find((props) =>
       String(props.className ?? "").includes("md:hidden"),
     );
+    const mobileLink = clickables.find((props) =>
+      String(props.className ?? "").includes("flex items-center gap-3"),
+    );
     const signOut = clickables.find((props) =>
       String(props.className ?? "").includes("w-full text-left"),
     );
     (hamburger?.onClick as () => void)();
+    (mobileLink?.onClick as () => void)();
     (signOut?.onClick as () => void)();
 
     expect(html).toContain("Sign out");
