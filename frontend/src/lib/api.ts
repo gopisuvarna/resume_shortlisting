@@ -13,13 +13,66 @@ type ApiQueryParamValue = string | number | boolean | undefined;
 type ApiQueryParams = Record<string, ApiQueryParamValue>;
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
-api.interceptors.request.use((config) => {
-  if (globalThis.window) {
-    const match = /(?:^|;\s*)access_token=([^;]+)/.exec(document.cookie);
-    if (match && config.headers) {
-      config.headers.Authorization = `Bearer ${decodeURIComponent(match[1])}`;
-    }
+const AUTH_COOKIE_NAMES = [
+  "access_token",
+  "refresh_token",
+  "user_role",
+] as const;
+
+function getCookieValue(cookieName: string): string | null {
+  if (typeof document === "undefined") return null;
+
+  const cookiePrefix = `${cookieName}=`;
+  const cookies = document.cookie.split(";");
+
+  for (const cookie of cookies) {
+    const trimmedCookie = cookie.trim();
+    if (!trimmedCookie.startsWith(cookiePrefix)) continue;
+    return decodeURIComponent(trimmedCookie.slice(cookiePrefix.length));
   }
+
+  return null;
+}
+
+function setAuthorizationHeader(
+  config: InternalAxiosRequestConfig,
+  token: string,
+) {
+  if (!config.headers) return;
+  config.headers.Authorization = `Bearer ${token}`;
+}
+
+function redirectToLogin() {
+  if (globalThis.window) {
+    globalThis.window.location.href = "/auth/login";
+  }
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getCookieValue("refresh_token");
+  if (!refreshToken) return null;
+
+  const { data } = await axios.post(`${BASE_URL}/token/refresh/`, {
+    refresh: refreshToken,
+  });
+
+  return data.access;
+}
+
+async function retryWithFreshAccessToken(
+  original: RetryableRequestConfig,
+): Promise<unknown> {
+  const accessToken = await refreshAccessToken();
+  if (!accessToken) return null;
+
+  setCookie("access_token", accessToken);
+  setAuthorizationHeader(original, accessToken);
+  return api(original);
+}
+
+api.interceptors.request.use((config) => {
+  const accessToken = getCookieValue("access_token");
+  if (accessToken) setAuthorizationHeader(config, accessToken);
   return config;
 });
 
@@ -31,24 +84,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && original && !original._retry) {
       original._retry = true;
       try {
-        const refreshMatch = /(?:^|;\s*)refresh_token=([^;]+)/.exec(
-          document.cookie,
-        );
-        if (refreshMatch) {
-          const { data } = await axios.post(`${BASE_URL}/token/refresh/`, {
-            refresh: decodeURIComponent(refreshMatch[1]),
-          });
-          setCookie("access_token", data.access);
-          if (original.headers) {
-            original.headers.Authorization = `Bearer ${data.access}`;
-          }
-          return api(original);
-        }
+        const retryResponse = await retryWithFreshAccessToken(original);
+        if (retryResponse) return retryResponse;
       } catch {
         clearAuthCookies();
-        if (globalThis.window) {
-          globalThis.window.location.href = "/auth/login";
-        }
+        redirectToLogin();
       }
     }
 
@@ -64,16 +104,13 @@ export function setCookie(name: string, value: string, days = 30) {
 }
 
 export function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
-  const pattern = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`);
-  const match = pattern.exec(document.cookie);
-  return match ? decodeURIComponent(match[1]) : null;
+  return getCookieValue(name);
 }
 
 export function clearAuthCookies() {
   if (typeof document === "undefined") return;
   const past = "Thu, 01 Jan 1970 00:00:00 UTC";
-  ["access_token", "refresh_token", "user_role"].forEach((name) => {
+  AUTH_COOKIE_NAMES.forEach((name) => {
     document.cookie = `${name}=;expires=${past};path=/`;
   });
 }

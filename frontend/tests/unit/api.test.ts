@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 describe("api helpers", () => {
   const setupModule = () => {
     jest.resetModules();
@@ -33,28 +34,42 @@ describe("api helpers", () => {
     }));
 
     const apiModule = require("@/lib/api");
-    return { apiModule, axiosMock, instance, requestUse, responseUse, get, post, patch, del };
+    return {
+      apiModule,
+      axiosMock,
+      instance,
+      requestUse,
+      responseUse,
+      get,
+      post,
+      patch,
+      del,
+    };
   };
 
   beforeEach(() => {
-    delete (global as Record<string, unknown>).window;
-    delete (global as Record<string, unknown>).document;
+    delete (globalThis as Record<string, unknown>).window;
+    delete (globalThis as Record<string, unknown>).document;
   });
 
   test("sets, reads, and clears cookies", () => {
     const { apiModule } = setupModule();
-    (global as Record<string, unknown>).document = { cookie: "" };
+    (globalThis as Record<string, unknown>).document = { cookie: "" };
 
     apiModule.setCookie("access_token", "abc 123", 1);
-    expect((global as { document: { cookie: string } }).document.cookie).toContain("access_token=abc%20123");
+    expect(
+      (globalThis as { document: { cookie: string } }).document.cookie,
+    ).toContain("access_token=abc%20123");
 
-    (global as { document: { cookie: string } }).document.cookie =
+    (globalThis as { document: { cookie: string } }).document.cookie =
       "access_token=token-value; refresh_token=refresh-value; user_role=HR";
     expect(apiModule.getCookie("refresh_token")).toBe("refresh-value");
     expect(apiModule.getCookie("missing")).toBeNull();
 
     apiModule.clearAuthCookies();
-    expect((global as { document: { cookie: string } }).document.cookie).toContain("user_role=");
+    expect(
+      (globalThis as { document: { cookie: string } }).document.cookie,
+    ).toContain("user_role=");
   });
 
   test("cookie helpers are no-ops when document is unavailable", () => {
@@ -67,8 +82,8 @@ describe("api helpers", () => {
 
   test("request interceptor adds authorization header from access token", () => {
     const { requestUse } = setupModule();
-    (global as Record<string, unknown>).window = {};
-    (global as Record<string, unknown>).document = {
+    (globalThis as Record<string, unknown>).window = {};
+    (globalThis as Record<string, unknown>).document = {
       cookie: "access_token=encoded%20token",
     };
 
@@ -84,16 +99,18 @@ describe("api helpers", () => {
 
     expect(interceptor({})).toEqual({});
 
-    (global as Record<string, unknown>).window = {};
-    (global as Record<string, unknown>).document = { cookie: "" };
+    (globalThis as Record<string, unknown>).window = {};
+    (globalThis as Record<string, unknown>).document = { cookie: "" };
     expect(interceptor({})).toEqual({});
   });
 
   test("extractApiErrorMessage handles strings, objects, arrays, and fallback values", () => {
-    const { apiModule, axiosMock, responseUse } = setupModule();
+    const { apiModule, axiosMock } = setupModule();
 
     axiosMock.isAxiosError.mockReturnValue(false);
-    expect(apiModule.extractApiErrorMessage(new Error("x"), "fallback")).toBe("fallback");
+    expect(apiModule.extractApiErrorMessage(new Error("x"), "fallback")).toBe(
+      "fallback",
+    );
 
     axiosMock.isAxiosError.mockReturnValue(true);
     expect(
@@ -105,24 +122,22 @@ describe("api helpers", () => {
 
     expect(
       apiModule.extractApiErrorMessage(
-        { response: { data: { email: ["Required"], non_field_errors: ["Bad login"] } } },
+        {
+          response: {
+            data: { email: ["Required"], non_field_errors: ["Bad login"] },
+          },
+        },
         "fallback",
         true,
       ),
     ).toBe("email: Required\nBad login");
 
     expect(
-      apiModule.extractApiErrorMessage(
-        { response: { data: {} } },
-        "fallback",
-      ),
+      apiModule.extractApiErrorMessage({ response: { data: {} } }, "fallback"),
     ).toBe("fallback");
 
     expect(
-      apiModule.extractApiErrorMessage(
-        { response: { data: 123 } },
-        "fallback",
-      ),
+      apiModule.extractApiErrorMessage({ response: { data: 123 } }, "fallback"),
     ).toBe("fallback");
 
     expect(
@@ -134,31 +149,38 @@ describe("api helpers", () => {
     ).toBe("tags: One, Two");
 
     const successHandler = responseUse.mock.calls[0][0];
-    expect(successHandler({ data: { ok: true } })).toEqual({ data: { ok: true } });
+    expect(successHandler({ data: { ok: true } })).toEqual({
+      data: { ok: true },
+    });
   });
 
   test("response interceptor refreshes token and retries once on 401", async () => {
-    const { apiModule, axiosMock, instance, responseUse } = setupModule();
-    (global as Record<string, unknown>).window = { location: { href: "" } };
-    (global as Record<string, unknown>).document = {
+    const { axiosMock, instance } = setupModule();
+    (globalThis as Record<string, unknown>).window = { location: { href: "" } };
+    (globalThis as Record<string, unknown>).document = {
       cookie: "refresh_token=refresh-123",
     };
 
     axiosMock.post.mockResolvedValue({ data: { access: "new-access" } });
     const retryResponse = { data: { ok: true } };
     const apiSpy = jest.spyOn(instance as never, "post");
-    const callableInstance = Object.assign(jest.fn().mockResolvedValue(retryResponse), instance);
+    const callableInstance = Object.assign(
+      jest.fn().mockResolvedValue(retryResponse),
+      instance,
+    );
     jest.resetModules();
 
     const requestUse = jest.fn();
     const freshResponseUse = jest.fn();
     const axiosAgain = {
-      create: jest.fn(() => Object.assign(callableInstance, {
-        interceptors: {
-          request: { use: requestUse },
-          response: { use: freshResponseUse },
-        },
-      })),
+      create: jest.fn(() =>
+        Object.assign(callableInstance, {
+          interceptors: {
+            request: { use: requestUse },
+            response: { use: freshResponseUse },
+          },
+        }),
+      ),
       post: axiosMock.post,
       isAxiosError: jest.fn().mockReturnValue(true),
     };
@@ -210,8 +232,8 @@ describe("api helpers", () => {
     }));
 
     const apiModule = require("@/lib/api");
-    (global as Record<string, unknown>).window = { location: { href: "" } };
-    (global as Record<string, unknown>).document = {
+    (globalThis as Record<string, unknown>).window = { location: { href: "" } };
+    (globalThis as Record<string, unknown>).document = {
       cookie: "refresh_token=refresh-123",
     };
 
@@ -226,7 +248,10 @@ describe("api helpers", () => {
       response: { status: 401 },
     });
 
-    expect((global as { window: { location: { href: string } } }).window.location.href).toBe("/auth/login");
+    expect(
+      (globalThis as { window: { location: { href: string } } }).window.location
+        .href,
+    ).toBe("/auth/login");
     apiModule.clearAuthCookies();
   });
 
@@ -239,7 +264,10 @@ describe("api helpers", () => {
     apiModule.authAPI.logout({ refresh: "refresh-token" });
     apiModule.authAPI.profile();
     apiModule.authAPI.updateProfile({ first_name: "Ada" });
-    apiModule.authAPI.changePassword({ old_password: "old", new_password: "new-password" });
+    apiModule.authAPI.changePassword({
+      old_password: "old",
+      new_password: "new-password",
+    });
     apiModule.jobsAPI.list({ status: "ACTIVE" });
     apiModule.jobsAPI.get(7);
     apiModule.jobsAPI.create({ title: "Engineer" });
@@ -261,19 +289,29 @@ describe("api helpers", () => {
     expect(post).toHaveBeenCalledWith("/auth/register/applicant/", {
       email: "applicant@example.com",
     });
-    expect(post).toHaveBeenCalledWith("/auth/register/hr/", { email: "hr@example.com" });
-    expect(post).toHaveBeenCalledWith("/auth/login/", { email: "user@example.com" });
-    expect(post).toHaveBeenCalledWith("/auth/logout/", { refresh: "refresh-token" });
+    expect(post).toHaveBeenCalledWith("/auth/register/hr/", {
+      email: "hr@example.com",
+    });
+    expect(post).toHaveBeenCalledWith("/auth/login/", {
+      email: "user@example.com",
+    });
+    expect(post).toHaveBeenCalledWith("/auth/logout/", {
+      refresh: "refresh-token",
+    });
     expect(get).toHaveBeenCalledWith("/auth/profile/");
     expect(patch).toHaveBeenCalledWith("/auth/profile/", { first_name: "Ada" });
     expect(post).toHaveBeenCalledWith("/auth/change-password/", {
       old_password: "old",
       new_password: "new-password",
     });
-    expect(get).toHaveBeenCalledWith("/jobs/", { params: { status: "ACTIVE" } });
+    expect(get).toHaveBeenCalledWith("/jobs/", {
+      params: { status: "ACTIVE" },
+    });
     expect(get).toHaveBeenCalledWith("/jobs/7/");
     expect(post).toHaveBeenCalledWith("/jobs/", { title: "Engineer" });
-    expect(patch).toHaveBeenCalledWith("/jobs/7/", { title: "Senior Engineer" });
+    expect(patch).toHaveBeenCalledWith("/jobs/7/", {
+      title: "Senior Engineer",
+    });
     expect(del).toHaveBeenCalledWith("/jobs/7/");
     expect(get).toHaveBeenCalledWith("/jobs/7/stats/");
     expect(get).toHaveBeenCalledWith("/jobs/my_jobs/");

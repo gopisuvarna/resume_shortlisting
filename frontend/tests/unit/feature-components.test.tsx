@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -16,8 +17,8 @@ jest.mock("next/link", () => ({
 
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ priority, ...props }: Record<string, unknown>) => (
-    <img {...props} alt={String(props.alt ?? "")} />
+  default: ({ alt, ...props }: { alt?: string } & Record<string, unknown>) => (
+    <img {...props} alt={alt ?? ""} />
   ),
 }));
 
@@ -37,10 +38,15 @@ import JobFilters from "@/components/jobs/JobFilters";
 import Navbar from "@/components/shared/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 
-function visitTree(node: React.ReactNode, visitor: (element: React.ReactElement) => void) {
+function visitTree(
+  node: React.ReactNode,
+  visitor: (element: React.ReactElement) => void,
+) {
   if (!React.isValidElement(node)) return;
   visitor(node);
-  React.Children.forEach(node.props.children, (child) => visitTree(child, visitor));
+  React.Children.forEach(node.props.children, (child) =>
+    visitTree(child, visitor),
+  );
 }
 
 describe("feature components", () => {
@@ -229,13 +235,25 @@ describe("feature components", () => {
       }
     });
 
-    (interactiveProps[0].onChange as (event: { target: { value: string } }) => void)({
+    (
+      interactiveProps[0].onChange as (event: {
+        target: { value: string };
+      }) => void
+    )({
       target: { value: "backend" },
     });
-    (interactiveProps[1].onChange as (event: { target: { value: string } }) => void)({
+    (
+      interactiveProps[1].onChange as (event: {
+        target: { value: string };
+      }) => void
+    )({
       target: { value: "FULL_TIME" },
     });
-    (interactiveProps[2].onChange as (event: { target: { value: string } }) => void)({
+    (
+      interactiveProps[2].onChange as (event: {
+        target: { value: string };
+      }) => void
+    )({
       target: { value: "SENIOR" },
     });
 

@@ -1,8 +1,27 @@
+/* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+function visitTree(
+  node: React.ReactNode,
+  visitor: (element: React.ReactElement) => void,
+) {
+  if (!React.isValidElement(node)) return;
+  visitor(node);
+  React.Children.forEach(node.props.children, (child) =>
+    visitTree(child, visitor),
+  );
+}
+
+function getClassName(props: Record<string, unknown>): string {
+  return typeof props.className === "string" ? props.className : "";
+}
+
 describe("Navbar mobile menu", () => {
-  const loadNavbar = (user: Record<string, unknown> | null, variant: "applicant" | "hr" = "applicant") => {
+  const loadNavbar = (
+    user: Record<string, unknown> | null,
+    variant: "applicant" | "hr" = "applicant",
+  ) => {
     let Navbar: React.ComponentType<{ variant?: "applicant" | "hr" }>;
     const setOpen = jest.fn();
     const logout = jest.fn();
@@ -23,8 +42,11 @@ describe("Navbar mobile menu", () => {
 
       jest.doMock("next/image", () => ({
         __esModule: true,
-        default: ({ priority, ...props }: Record<string, unknown>) => (
-          <img {...props} alt={String(props.alt ?? "")} />
+        default: ({
+          alt,
+          ...props
+        }: { alt?: string } & Record<string, unknown>) => (
+          <img {...props} alt={alt ?? ""} />
         ),
       }));
 
@@ -47,18 +69,13 @@ describe("Navbar mobile menu", () => {
         };
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       Navbar = require("@/components/shared/Navbar").default;
     });
 
     const element = <Navbar variant={variant} />;
     return { html: renderToStaticMarkup(element), Navbar, setOpen, logout };
   };
-
-  function visitTree(node: React.ReactNode, visitor: (element: React.ReactElement) => void) {
-    if (!React.isValidElement(node)) return;
-    visitor(node);
-    React.Children.forEach(node.props.children, (child) => visitTree(child, visitor));
-  }
 
   afterEach(() => {
     jest.resetModules();
@@ -84,13 +101,13 @@ describe("Navbar mobile menu", () => {
       }
     });
     const hamburger = clickables.find((props) =>
-      String(props.className ?? "").includes("md:hidden"),
+      getClassName(props).includes("md:hidden"),
     );
     const mobileLink = clickables.find((props) =>
-      String(props.className ?? "").includes("flex items-center gap-3"),
+      getClassName(props).includes("flex items-center gap-3"),
     );
     const signOut = clickables.find((props) =>
-      String(props.className ?? "").includes("w-full text-left"),
+      getClassName(props).includes("w-full text-left"),
     );
     (hamburger?.onClick as () => void)();
     (mobileLink?.onClick as () => void)();
@@ -105,7 +122,7 @@ describe("Navbar mobile menu", () => {
   });
 
   test("renders Human Resources as default dept when hr_department is empty", () => {
-    const { html, Navbar } = loadNavbar(
+    const { html } = loadNavbar(
       {
         full_name: "Grace Hopper",
         first_name: "Grace",
@@ -129,7 +146,7 @@ describe("Navbar mobile menu", () => {
       }
     });
     clickables
-      .filter((props) => String(props.className ?? "").includes("block px-4 py-3"))
+      .filter((props) => getClassName(props).includes("block px-4 py-3"))
       .forEach((props) => (props.onClick as () => void)());
 
     expect(html).toContain("Get started");
