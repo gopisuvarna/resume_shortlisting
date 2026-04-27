@@ -136,6 +136,33 @@ describe("feature components", () => {
     expect(html).toContain("Sign in");
   });
 
+  test("RegisterFormShell renders submit label when not loading", () => {
+    const html = renderToStaticMarkup(
+      <RegisterFormShell
+        title="Create account"
+        subtitle="Start your journey"
+        icon={<span>Icon</span>}
+        iconContainerClassName="icon-wrap"
+        cardClassName="card-shell"
+        buttonClassName="btn-shell"
+        signInLinkClassName="sign-in-link"
+        signInHref="/auth/login"
+        signInLabel="Already have an account?"
+        submitLabel="Create Account"
+        loadingLabel="Creating"
+        error=""
+        onCloseError={() => undefined}
+        loading={false}
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <input type="email" />
+      </RegisterFormShell>,
+    );
+
+    expect(html).toContain("Create Account");
+    expect(html).not.toContain("Creating");
+  });
+
   test("HRStats and StatCard render summary values", () => {
     const statsHtml = renderToStaticMarkup(
       <HRStats activeJobs={4} totalApps={18} shortlisted={6} todayApps={3} />,
@@ -237,6 +264,23 @@ describe("feature components", () => {
     expect(html).toContain("View");
   });
 
+  test("JobCard renders singular opening label when openings is 1", () => {
+    const html = renderToStaticMarkup(
+      <JobCard
+        job={{
+          ...sampleJob,
+          openings: 1,
+          total_applicants: 5,
+          deadline: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain("1 opening");
+    expect(html).not.toContain("1 openings");
+    expect(html).toContain("5 applied");
+  });
+
   test("JobCard renders deadline and salary details when present", () => {
     const html = renderToStaticMarkup(<JobCard job={sampleJob} />);
 
@@ -273,6 +317,83 @@ describe("feature components", () => {
     expect(positiveHtml).toContain("Withdraw");
     expect(rejectedHtml).toContain("Deleting");
     expect(rejectedHtml).not.toContain("Withdraw");
+  });
+
+  test("ApplicationCard hides withdraw for HIRED and REJECTED", () => {
+    for (const status of ["HIRED", "REJECTED"]) {
+      const html = renderToStaticMarkup(
+        <ApplicationCard
+          app={{
+            ...sampleApp,
+            status,
+            status_display: status.charAt(0) + status.slice(1).toLowerCase(),
+          }}
+          withdrawing={false}
+          deleting={false}
+          onWithdraw={() => undefined}
+          onDelete={() => undefined}
+        />,
+      );
+      expect(html).not.toContain("Withdraw");
+      expect(html).toContain("Delete");
+    }
+  });
+
+  test("ApplicationCard renders WITHDRAWN state without withdraw button", () => {
+    const html = renderToStaticMarkup(
+      <ApplicationCard
+        app={{
+          ...sampleApp,
+          status: "WITHDRAWN",
+          status_display: "Withdrawn",
+          status_message: "You have withdrawn this application.",
+        }}
+        withdrawing={false}
+        deleting={false}
+        onWithdraw={() => undefined}
+        onDelete={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Withdrawn");
+    expect(html).not.toContain("Withdrawing");
+  });
+
+  test("ApplicationCard renders unknown status with default PENDING styling", () => {
+    const html = renderToStaticMarkup(
+      <ApplicationCard
+        app={{
+          ...sampleApp,
+          status: "UNKNOWN_STATUS",
+          status_display: "Unknown",
+        }}
+        withdrawing={false}
+        deleting={false}
+        onWithdraw={() => undefined}
+        onDelete={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("bg-slate-100");
+  });
+
+  test("ApplicationCard delete button shows disabled text when both withdrawing and deleting are true", () => {
+    const html = renderToStaticMarkup(
+      <ApplicationCard
+        app={{
+          ...sampleApp,
+          status: "PENDING",
+          status_display: "Pending",
+        }}
+        withdrawing={true}
+        deleting={true}
+        onWithdraw={() => undefined}
+        onDelete={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Deleting");
+    expect(html).toContain("disabled");
   });
 
   test("ApplicationCard wires withdraw and delete actions", () => {
@@ -313,5 +434,21 @@ describe("feature components", () => {
     expect(userHtml).toContain("Browse Jobs");
     expect(guestHtml).toContain("Get started");
     expect(guestHtml).toContain("HR Portal");
+  });
+
+  test("Navbar shows Human Resources as default department when hr_department is empty", () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: {
+        full_name: "Jane Doe",
+        first_name: "Jane",
+        last_name: "Doe",
+        email: "jane@example.com",
+        hr_department: "",
+      },
+      logout: jest.fn(),
+    });
+    const html = renderToStaticMarkup(<Navbar variant="hr" />);
+
+    expect(html).toContain("Human Resources");
   });
 });

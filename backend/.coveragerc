@@ -1,15 +1,27 @@
 [run]
 branch = True
-source =
-    applications
-    jobs
-    shortlist
-    users
-    core
+source = .
+omit =
+    */migrations/*
+    */__init__.py
+    */tests.py
+    */test_*.py
+    manage.py
+    core/asgi.py
+    core/wsgi.py
+    core/urls.py
+    core/test_settings.py
+    test_utils.py
 
 [report]
 omit =
     */migrations/*
     */__init__.py
+    */tests.py
+    */test_*.py
     manage.py
+    core/asgi.py
+    core/wsgi.py
+    core/urls.py
     core/test_settings.py
+    test_utils.py

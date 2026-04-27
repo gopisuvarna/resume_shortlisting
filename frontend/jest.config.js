@@ -17,12 +17,10 @@ const customJestConfig = {
     "src/components/jobs/ApplicationCard.tsx",
     "src/components/jobs/JobCard.tsx",
     "src/components/jobs/JobFilters.tsx",
-    "src/components/shared/Navbar.tsx",
     "src/components/shared/ErrorAlert.tsx",
     "src/components/shared/LoadingSpinner.tsx",
     "src/components/ui/FormField.tsx",
     "src/components/ui/StatusBadge.tsx",
-    "src/lib/api.ts",
     "src/middleware.ts",
   ],
   coverageDirectory: "coverage",
@@ -30,6 +28,7 @@ const customJestConfig = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  coveragePathIgnorePatterns: [],
 };
 
 module.exports = createJestConfig(customJestConfig);

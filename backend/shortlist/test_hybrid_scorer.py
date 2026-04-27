@@ -476,3 +476,78 @@ class HybridScorerPipelineTests(SimpleTestCase):
 
         self.assertEqual(app.ai_recommendation, "MAYBE")
         self.assertEqual(app.status, "REVIEWING")
+
+
+class HybridScorerEdgeCaseTests(SimpleTestCase):
+    def test_reconcile_skills_with_resume_returns_data_unchanged_for_non_lists(self):
+        data = {"matched_skills": "not a list", "missing_skills": "also not a list"}
+        out = hybrid_scorer._reconcile_skills_with_resume(data, "Python Django resume")
+        self.assertEqual(out, data)
+
+    def test_reconcile_skills_with_resume_skips_non_string_missing_items(self):
+        data = {"matched_skills": [], "missing_skills": [None, 123, {"name": "React"}]}
+        out = hybrid_scorer._reconcile_skills_with_resume(data, "React project")
+        self.assertEqual(out["missing_skills"], [])
+
+    def test_extract_skill_labels_handles_mixed_types(self):
+        items = ["Python", {"skill": "Django"}, None, 123, ""]
+        self.assertEqual(hybrid_scorer._extract_skill_labels(items), ["Python", "Django"])
+
+    def test_join_top_skills_limits_to_5(self):
+        skills = [f"Skill{i}" for i in range(10)]
+        self.assertEqual(hybrid_scorer._join_top_skills(skills, limit=5), "Skill0, Skill1, Skill2, Skill3, Skill4")
+
+    def test_compose_explanation_opening_strong_yes(self):
+        self.assertIn("shortlisted", hybrid_scorer._compose_explanation_opening("STRONG_YES"))
+        self.assertIn("shortlisted", hybrid_scorer._compose_explanation_opening("YES"))
+        self.assertIn("borderline", hybrid_scorer._compose_explanation_opening("MAYBE"))
+        self.assertIn("not", hybrid_scorer._compose_explanation_opening("NO"))
+
+    def test_compose_explanation_reason_all_paths(self):
+        msg = hybrid_scorer._compose_explanation_reason("STRONG_YES", "Python", "React")
+        self.assertIn("alignment", msg)
+        self.assertIn("Python", msg)
+        self.assertIn("React", msg)
+
+        msg = hybrid_scorer._compose_explanation_reason("MAYBE", "Python", "React")
+        self.assertIn("incomplete", msg)
+        self.assertIn("Python", msg)
+        self.assertIn("React", msg)
+
+        msg = hybrid_scorer._compose_explanation_reason("NO", "Python", "React")
+        self.assertIn("blockers", msg)
+        self.assertIn("React", msg)
+
+        msg = hybrid_scorer._compose_explanation_reason("STRONG_YES", "", "")
+        self.assertIn("alignment", msg)
+
+    def test_clean_json_wraps_json_without_opening_brace(self):
+        result = hybrid_scorer._clean_json('"skills_match": 80, "experience_match": 70')
+        self.assertEqual(result["skills_match"], 80)
+
+    def test_clean_json_raises_value_error_for_truly_invalid_text(self):
+        with self.assertRaises(ValueError):
+            hybrid_scorer._clean_json("{invalid json with no closing brace")
+
+    def test_safe_num_handles_type_error_and_value_error(self):
+        self.assertEqual(hybrid_scorer._safe_num(None), 0.0)
+        self.assertEqual(hybrid_scorer._safe_num("abc"), 0.0)
+        self.assertEqual(hybrid_scorer._safe_num(42, default=99.0), 42.0)
+
+    def test_score_debug_snapshot_returns_expected_keys(self):
+        llm = {"ai_skills_score": 80, "ai_experience_score": 70, "ai_education_score": 60,
+               "matched_skills": ["Python"], "missing_skills": ["React"]}
+        snap = hybrid_scorer._score_debug_snapshot(75.0, 80.0, llm)
+        self.assertIn("skills", snap)
+        self.assertIn("experience", snap)
+        self.assertIn("education", snap)
+        self.assertIn("semantic", snap)
+        self.assertIn("coverage", snap)
+        self.assertIn("skill_signal", snap)
+
+    def test_build_explanation_with_empty_skills_and_missing(self):
+        llm = {"matched_skills": [], "missing_skills": []}
+        result = hybrid_scorer._build_explanation("STRONG_YES", llm)
+        self.assertIn("shortlisted", result)
+        result = hybrid_scorer._build_explanation("NO", llm)
+        self.assertIn("not", result)

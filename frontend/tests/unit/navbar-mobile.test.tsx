@@ -104,6 +104,21 @@ describe("Navbar mobile menu", () => {
     expect(logout).toHaveBeenCalled();
   });
 
+  test("renders Human Resources as default dept when hr_department is empty", () => {
+    const { html, Navbar } = loadNavbar(
+      {
+        full_name: "Grace Hopper",
+        first_name: "Grace",
+        last_name: "Hopper",
+        email: "grace@example.com",
+        hr_department: "",
+      },
+      "hr",
+    );
+
+    expect(html).toContain("Human Resources");
+  });
+
   test("renders the open mobile guest menu", () => {
     const { html, Navbar, setOpen } = loadNavbar(null);
     const tree = Navbar({ variant: "applicant" });
