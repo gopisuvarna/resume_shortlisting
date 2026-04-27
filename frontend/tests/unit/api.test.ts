@@ -105,7 +105,7 @@ describe("api helpers", () => {
   });
 
   test("extractApiErrorMessage handles strings, objects, arrays, and fallback values", () => {
-    const { apiModule, axiosMock } = setupModule();
+    const { apiModule, axiosMock, responseUse } = setupModule();
 
     axiosMock.isAxiosError.mockReturnValue(false);
     expect(apiModule.extractApiErrorMessage(new Error("x"), "fallback")).toBe(

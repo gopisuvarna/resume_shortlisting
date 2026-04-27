@@ -42,12 +42,11 @@ describe("Navbar mobile menu", () => {
 
       jest.doMock("next/image", () => ({
         __esModule: true,
-        default: ({
-          alt,
-          ...props
-        }: { alt?: string } & Record<string, unknown>) => (
-          <img {...props} alt={alt ?? ""} />
-        ),
+        default: (imageProps: { alt?: string } & Record<string, unknown>) => {
+          const { alt, ...props } = imageProps;
+          delete props.priority;
+          return <img {...props} alt={alt ?? ""} />;
+        },
       }));
 
       jest.doMock("next/navigation", () => ({
